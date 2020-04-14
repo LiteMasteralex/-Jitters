@@ -1,8 +1,0 @@
-Programa myProgram;
-var int : i, j, k;
-  float : pi;
-  char : stop[10];
-
-principal() {
-  Asignacion
-}
