@@ -1,0 +1,12 @@
+Programa myProgram;
+
+principal() {
+  x = x + 5 + 5 + 5;
+  x = funcion();
+  x = y | z;
+  x = x * 5;
+  x = x < 8;
+  x = x$;
+  x = 10;
+  x = 5 + (5);
+}

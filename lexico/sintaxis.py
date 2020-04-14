@@ -10,60 +10,120 @@ Original file is located at
 import pyparsing
 from pyparsing import *
 
-from google.colab import drive
-drive.mount('/content/drive')
-
 #Predefinir los terminos que se usan en recursion
 Variables_1 = Forward()
+Variables_2 = Forward()
+Expresiones = Forward()
+Logicos = Forward()
+Aritmeticos = Forward()
+Factores = Forward()
+Especiales = Forward()
 Lista = Forward()
+Funciones = Forward()
+Estatuto = Forward()
+Expresiones = Forward()
+Escritura_1 = Forward()
+Escritura_2 = Forward()
+Decision_1 = Forward()
 
 #Definiciones Simples de Palabras claves
+Escribe = Regex(r"escribe")
+Lee = Regex(r"lee")
+Regresa = Regex(r"regresa")
+Si = Regex(r"si")
+Desde = Regex(r"desde")
+Mientras = Regex(r"mientras")
+Hasta = Regex(r"hasta")
+Hacer = Regex(r"hacer")
 Id = Word(alphas)
 Tipo = Keyword('int') | Keyword('float') | Keyword('char')
+Tipo_Retorno = Tipo | Keyword('void')
 Num = Word(nums)
+Var_Int = Regex(r'[0-9]+')
+Var_Float = Regex(r'[0-9]+(.[0-9]+)*')
+Var_Char = Regex(r"'[a-zA-z]'")
+String = Regex(r"\"[ -~]*\"")
 
-#PROGRAMA
-Estatuto = Keyword('Asignacion') | Empty()
-Funciones = Keyword('funciones') | Empty()
+#Definicion de Tokens
 
-Identificador = Id + '[' + Num + ']' + '[' + Num + ']' | Id + '[' + Num + ']' | Id 
+#VAR_CTE
+Var_CTE = Var_Float | Var_Int | Var_Char 
 
-Lista <<= ',' + Identificador + Lista | Empty()
-Lista_Ids = Identificador + Lista
+#IDENTIFICADORES
+Identificadores = Id + '[' + Num + ']' + '[' + Num + ']' | Id + '[' + Num + ']' | Id
 
+#LISTA_IDS
+Lista <<= ',' + Identificadores + Lista | Empty()
+Lista_Ids = Identificadores + Lista
+
+#FUNCION_RETORNO
+Funcion_Retorno = Id + '(' + Lista_Ids + ')' | Id + '(' + ')'
+
+#TERMINOS
+Terminos = '(' + Expresiones + ')' | Funcion_Retorno | Identificadores | Var_CTE
+
+#ESPECIALES
+Especiales_1 = Regex(r"[$¡?]")
+Especiales <<= Terminos + Especiales_1 | Terminos
+
+#FACTORES
+Factores_1 = Regex(r"[*/]")
+Factores <<= Especiales + Factores_1 + Factores | Especiales
+
+#ARITMETICOS
+Aritmeticos_1 = Regex(r"[+-]")
+Aritmeticos <<= Factores + Aritmeticos_1 + Aritmeticos | Factores
+
+#LOGICOS
+Logicos_1 = Regex(r"[<>]|==|!=")
+Logicos <<= Aritmeticos + Logicos_1 + Logicos | Aritmeticos
+
+#EXPRESION
+Expresiones_1 = Regex(r"[&|]")
+Expresiones <<= Logicos + Expresiones_1 + Expresiones | Logicos
+
+#ASIGNACION
+Asignacion = Identificadores + '=' + Expresiones + ';'
+
+#RETORNO
+Retorno = Regresa + '(' + Expresiones + ')' + ';'
+
+#FUNCION_VOID
+Funcion_Void = Id + '(' + Lista_Ids + ')' + ';' | Id + '(' + ')' + ';'
+
+#LECTURA
+Lectura = Lee + '(' + Lista_Ids + ')' + ';'
+
+#ESCRITURA
+Escritura_2 <<= ',' + Escritura_1 | Empty()
+Escritura_1 <<= String + Escritura_2 | Expresiones + Escritura_2
+Escritura = Escribe + '(' + Escritura_1 + ')' + ';'
+
+#DECISION
+Decision_1 <<= Keyword('sino') + '{' + Estatuto + '}' | Empty()
+Decision = Si + '(' + Expresiones + ')' + Keyword('entonces') + '{' + Estatuto + '}' + Decision_1
+
+#REPETICION
+Repeticion_Cond = Mientras + '(' + Expresiones + ')' + Keyword('haz')  + '{' + Estatuto  + '}'  
+Repeticion_No_Cond = Desde + Asignacion + Hasta + Expresiones + Hacer + '{' + Estatuto + '}'
+Repeticion = Repeticion_Cond | Repeticion_No_Cond
+
+#ESTATUTO
+Estatuto_1 = Asignacion | Retorno | Lectura | Escritura | Decision | Repeticion | Funcion_Void 
+Estatuto <<= Estatuto_1 + Estatuto | Empty() 
+
+#PARAMETROS
+Variables_2 = ',' + Tipo + ':' + Id + Variables_2 | Empty()
+Parametros = Tipo + ':' + Id + Variables_2 | Empty()
+
+#VARIABLES
 Variables_1 <<= Tipo + ':' + Lista_Ids + ';' + Variables_1 | Empty()
 Variables = Keyword('var') + Tipo + ':' + Lista_Ids + ';' + Variables_1 | Empty()
 
-Programa = Keyword('Programa') + Id + ';' + Variables + Funciones + Keyword('principal') + '()' + '{' + Estatuto + '}'
+Funciones <<= Keyword('funcion') + Tipo_Retorno + Id + '(' + Parametros + ')' + ';' + Variables + '{' + Estatuto + '}' + Funciones | Empty()
 
-#Predefinir los terminos que se usan en recursion
-Escritura_1 = Forward()
-Escritura_2 = Forward()
-Lectura_1 = Forward()
-
-#FUNCION_VOID 
-
-
-#RETORNO
-Retorno = Keyword('regresa') + '(' + Expresiones + ')'
-
-#LECTURA
-Lectura_1 <<= ',' + Identificadores + Lectura_1 | Empty()
-Lectura = Keyword('lee') + '(' + Identificadores + Lectura_1 + ')' + ';'
-
-#ESCRITURA
-Escritura_1 <<= '"' + String + '"' + Escritura_2 | Expresiones + Escritura_2
-Escritura_2 <<= ',' + Escritura_1 | Empty()
-Escritura = Keyword('escribe') + '(' + Escritura_1 + ')'
-
-#DECISION
-Decision_1 = Keyword('sino') | Empty()
-Decision = Keyword('si') + '(' + Operacion_Cond + ')' + Keyword('entonces') + '{' + Estatuto + ';' + '}'
-
-#REPETICION
-Repeticion_Cond = Keyword('mientras') + '(' + Operacion_Cond + ')' + Keyword('haz')  + '{' + Estatuto +  ';' + '}'  
-Repeticion_No_Cond = Keyword('desde') + Asignacion + Keyword('hasta') + Identificadores + Keyword('hacer') + '{' + Estatuto +  ';' + '}'
-Repeticion = Repeticion_Cond | Repeticion_No_Cond
+#PROGRAMA
+Programa = Keyword('Programa') + Id + ';' + Variables + Funciones + Keyword('principal') + '(' + ')' + '{' + Estatuto + '}'
 
 #Lee el archivo
 print("Ingrese el nombre del archivo a leer")
