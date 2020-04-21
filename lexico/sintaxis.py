@@ -9,6 +9,51 @@ Original file is located at
 
 import pyparsing
 from pyparsing import *
+from pydoc import locate
+
+# Esructura de Tabla de Variables
+TablaVariables = {}
+TablaFunciones = {}
+
+# Auxiliares para definicion de Tablas
+tipo = 'void'
+dimension = 0
+nombreFuncion = ''
+
+# Funcion Para Agregar a Tabla de Variables
+def AgregarVariable(nombre):
+  TablaVariables[nombre[0]] = {
+      'tipo': tipo,
+      'dimension' : dimension
+  }
+
+def setType(current):
+  global tipo
+  tipo = current
+
+def addDimention(dim):
+  global dimension
+  dimension = dimension + 1
+
+def ResetId(token):
+  global dimension
+  dimension = 0
+
+def ResetTablaVar(token):
+  global TablaVariables
+  TablaVariables = {}
+
+def CreateFunction(token):
+  global nombreFuncion
+  nombreFuncion = token[0]
+  TablaFunciones[token[0]] = {
+      'tipo': tipo,
+      'variables': ''
+  }
+
+
+def AsignaVariables():
+  TablaFunciones[nombreFuncion]['variables'] = TablaVariables
 
 #Predefinir los terminos que se usan en recursion
 Variables_1 = Forward()
@@ -36,8 +81,10 @@ Mientras = Regex(r"mientras")
 Hasta = Regex(r"hasta")
 Hacer = Regex(r"hacer")
 Id = Word(alphas)
-Tipo = Keyword('int') | Keyword('float') | Keyword('char')
-Tipo_Retorno = Tipo | Keyword('void')
+IdProg = Word(alphas)
+IdFunciones = Word(alphas)
+Tipo = Keyword('int') ^ Keyword('float') ^ Keyword('char')
+Tipo_Retorno = Tipo ^ Keyword('void')
 Num = Word(nums)
 Var_Int = Regex(r'[0-9]+')
 Var_Float = Regex(r'[0-9]+(.[0-9]+)*')
@@ -50,11 +97,11 @@ String = Regex(r"\"[ -~]*\"")
 Var_CTE = Var_Float | Var_Int | Var_Char 
 
 #IDENTIFICADORES
-Identificadores = Id + '[' + Num + ']' + '[' + Num + ']' | Id + '[' + Num + ']' | Id
+Identificadores = Id + '[' + Num.setParseAction(lambda token: addDimention(token[0])) + ']' + '[' + Num + ']' | Id + '[' + Num + ']' | Id
 
 #LISTA_IDS
 Lista <<= ',' + Identificadores + Lista | Empty()
-Lista_Ids = Identificadores + Lista
+Lista_Ids = Identificadores.setParseAction(AgregarVariable) + Lista.setParseAction(ResetId)
 
 #FUNCION_RETORNO
 Funcion_Retorno = Id + '(' + Lista_Ids + ')' | Id + '(' + ')'
@@ -118,12 +165,12 @@ Parametros = Tipo + ':' + Id + Variables_2 | Empty()
 
 #VARIABLES
 Variables_1 <<= Tipo + ':' + Lista_Ids + ';' + Variables_1 | Empty()
-Variables = Keyword('var') + Tipo + ':' + Lista_Ids + ';' + Variables_1 | Empty()
+Variables = Keyword('var') + Tipo.setParseAction(lambda token: setType(locate(token[0]) )) + ':' + Lista_Ids + ';' + Variables_1 | Empty()
 
-Funciones <<= Keyword('funcion') + Tipo_Retorno + Id + '(' + Parametros + ')' + ';' + Variables + '{' + Estatuto + '}' + Funciones | Empty()
+Funciones <<= Keyword('funcion').setParseAction(ResetTablaVar) + Tipo_Retorno + IdFunciones.setParseAction(CreateFunction) + '(' + Parametros + ')' + ';' + Variables.setParseAction(AsignaVariables) + '{' + Estatuto + '}' + Funciones | Empty()
 
 #PROGRAMA
-Programa = Keyword('Programa') + Id + ';' + Variables + Funciones + Keyword('principal') + '(' + ')' + '{' + Estatuto + '}'
+Programa = Keyword('Programa') + IdProg.setParseAction(CreateFunction) + ';' + Variables.setParseAction(AsignaVariables) + Funciones + Keyword('principal') + '(' + ')' + '{' + Estatuto + '}'
 
 #Lee el archivo
 print("Ingrese el nombre del archivo a leer")
@@ -137,3 +184,5 @@ try:
   print("Se compilo exitosamente")
 except pyparsing.ParseException as pe:
   print(pe.explain(pe))
+
+print(TablaFunciones)
