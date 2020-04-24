@@ -69,7 +69,7 @@ t_EQUALS = r'==' #
 t_NOTEQUAL = r'!=' #
 t_AND = r'[&]' #
 t_OR = r'[|]' #
-t_STRING = r'\".*\"'
+t_STRING = r'\"[ -~]*\"'
 
 
 
