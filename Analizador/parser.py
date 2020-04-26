@@ -1,9 +1,15 @@
 # Parsing rules
 
+# Tablas
+TablaVariables = {}
+TablaFunciones = {}
+current_type = 'void'
+
 # PROGRAMA
 def p_programa(t):
     '''programa : PROGRAMA ID SEMICOLON variables funciones PRINCIPAL LPAREN RPAREN LCORCHETE estatuto RCORCHETE'''
     t[0] = "COMPILADO" # t[0] es lo que tiene como valor programa
+    TablaFunciones[t[2]] = {'tipo': current_type, 'variables': ''}
 
 # VARIABLES
 def p_variables(t):
@@ -25,6 +31,8 @@ def p_lista(t):
 def p_funciones(t):
     '''funciones : FUNCION tipo_retorno ID LPAREN parametros RPAREN SEMICOLON variables LCORCHETE estatuto RCORCHETE funciones
                 | empty'''
+    if(t[1] == 'funcion'):
+        TablaFunciones[t[3]] = {'tipo': t[2], 'variables': ''}
 
 # TIPO_RETORNO
 def p_tipo_retorno(t):
@@ -32,12 +40,15 @@ def p_tipo_retorno(t):
                     | FLOAT 
                     | CHAR 
                     | VOID'''
+    t[0] = t[1]
 
 # TIPO
 def p_tipo(t):
     '''tipo : INT 
             | FLOAT 
             | CHAR'''
+    global current_type
+    current_type = t[1]
 
 #PARAMETROS
 def p_parametros(t):
@@ -69,6 +80,12 @@ def p_identificadores(t):
     '''identificadores : ID LBRACKET CTEI RBRACKET LBRACKET CTEI RBRACKET
                         | ID LBRACKET CTEI RBRACKET
                         | ID '''
+    dimension = 0
+    if(len(t) > 2):
+        dimension = 1
+    if(len(t) > 5):
+        dimension = 2
+    TablaVariables[t[1]] = {'tipo': current_type, 'dimension': dimension}
 
 # TERMINOS
 def p_terminos(t):
@@ -200,6 +217,8 @@ while True:
         f.close()
         if parser.parse(data) == "COMPILADO":
             print("Se compilo exitosamente.")
+            print(TablaFunciones)
+            print(TablaVariables)
     except EOFError:
         print(EOFError)
     if not s: continue
