@@ -72,30 +72,29 @@ t_OR = r'[|]' #
 t_STRING = r'\"[ -~]*\"'
 
 
-
 # Define a ID
 def t_ID(t):
-    r'[A-za-z]([A-za-z]|_|[0-9])*'
+    r'[a-zA-Z_][a-zA-Z_0-9]*'
     t.type = reserved.get(t.value, 'ID')
     return t
 
 
 # Define una variable float 
 def t_CTEF(t):
-    r'[0-9]*\.[0-9]+|[0-9]+'
+    r'[0-9]+(.[0-9]+)*'
     t.value = float(t.value)
     return t
 
 
 # Define una variable int
 def t_CTEI(t):
-    r'\d+'
+    r'[0-9]+'
     t.value = int(t.value)
     return t
 
 # Define una variable char
 def t_CTECH(t):
-    r"\'[A-za-z]\'"
+    r"\'[A-Za-z]\'"
     t.value = t.value[1]
     return t
 
