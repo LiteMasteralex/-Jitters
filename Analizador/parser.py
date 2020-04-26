@@ -77,14 +77,15 @@ def p_asignacion(t):
 
 # IDENTIFICADORES
 def p_identificadores(t):
-    '''identificadores : ID LBRACKET CTEI RBRACKET LBRACKET CTEI RBRACKET
-                        | ID LBRACKET CTEI RBRACKET
+    '''identificadores : ID LBRACKET CTEF RBRACKET LBRACKET CTEF RBRACKET
+                        | ID LBRACKET CTEF RBRACKET
                         | ID '''
     dimension = 0
     if(len(t) > 2):
         dimension = 1
     if(len(t) > 5):
         dimension = 2
+    print(t[1])
     TablaVariables[t[1]] = {'tipo': current_type, 'dimension': dimension}
 
 # TERMINOS
@@ -218,6 +219,8 @@ while True:
         if parser.parse(data) == "COMPILADO":
             print("Se compilo exitosamente.")
             print(TablaFunciones)
+            print()
+            print()
             print(TablaVariables)
     except EOFError:
         print(EOFError)
