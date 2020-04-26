@@ -1,6 +1,6 @@
 Programa myProgram;
 var int : i, j, k;
-  float : pi[5][5];
+  float : pi[10][5];
   char : stop[10];
   
 # Compentario de la voidFunction()
