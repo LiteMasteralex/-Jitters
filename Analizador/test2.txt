@@ -2,7 +2,8 @@ Programa myProgram;
 var int : i, j, k;
   float : pi[5][5];
   char : stop[10];
-
+  
+# Compentario de la voidFunction()
 funcion void voidFunction();
   var int : subI;
   {
@@ -14,10 +15,9 @@ funcion void voidFunction();
       function();
     }
 
-# TODO(LARA) : también causa error, sospecho que es por el " | "
-#    mientras((X < 10) | (Y > z)) haz {
-#      y = 10;
-#    }
+    mientras((X < 10) | (Y > z)) haz {
+      y = 10;
+    }
 
     desde x=0; hasta Y | Z hacer {
       j = 8;
@@ -27,8 +27,7 @@ funcion void voidFunction();
   funcion float floatFunction();
   {
     id();
-    regresa(5); # TODO(LARA): verificar si queremos que 
-                #             termine con ";" esta funcion
+    regresa(5);
   }
 
 
@@ -36,7 +35,7 @@ funcion void voidFunction();
 principal() {
   j = 10;
   x = 5.2;
-  # msg = 'c'; <--- TODO(LARA) : CAUSA PROBLEMA, revisar lexer.py sobre char  
+  msg = 'c';  
   myId = Funcion() + FuncionOtra(x, y, z) + 24;
   last = (10 * 5) / 8;
 

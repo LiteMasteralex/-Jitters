@@ -81,7 +81,7 @@ def p_terminos(t):
 # ESPECIALES
 def p_especiales(t):
     '''especiales : terminos
-                    | terminos especiales_1 especiales'''
+                    | terminos especiales_1'''
 def p_especiales_1(t):
     '''especiales_1 : DETERMINANTE
                     | TRANSPUESTA
@@ -161,7 +161,7 @@ def p_repeticion(t):
     '''repeticion : repeticion_cond 
                   | repeticion_no_cond'''
 def p_repeticion_cond(t):
-    '''repeticion_cond : MIENTRAS LPAREN expresiones RPAREN HAZ LCORCHETE estatuto SEMICOLON RCORCHETE'''
+    '''repeticion_cond : MIENTRAS LPAREN expresiones RPAREN HAZ LCORCHETE estatuto RCORCHETE'''
 def p_repeticion_no_cond(t):
     '''repeticion_no_cond : DESDE asignacion HASTA expresiones HACER LCORCHETE estatuto RCORCHETE'''
 
@@ -191,7 +191,7 @@ parser = yacc.yacc()
 
 while True:
     try:
-        s = raw_input('!Jitters > ') # solo 'input()' para py3
+        s = input('!Jitters > ') # solo 'input()' para py3
         file = str(s)
         if s == "":
             sys.exit('bye')

@@ -55,9 +55,9 @@ t_LBRACKET = r'\[' #
 t_RBRACKET = r'\]' #
 t_COLON = r':'
 t_COMMA = r'\,'
-t_DETERMINANTE = r'[$]' #
-t_TRANSPUESTA = r'[%]' #
-t_INVERSA = r'[?]' #
+t_DETERMINANTE = r'\$' #
+t_TRANSPUESTA = r'\¡' #
+t_INVERSA = r'\?' #
 t_PLUS = r'\+'
 t_MINUS = r'-'
 t_TIMES = r'\*'
@@ -95,8 +95,8 @@ def t_CTEI(t):
 
 # Define una variable char
 def t_CTECH(t):
-    r'[A-za-z]'
-    t.value = int(t.value)
+    r"\'[A-za-z]\'"
+    t.value = t.value[1]
     return t
 
 # Ignored characters
