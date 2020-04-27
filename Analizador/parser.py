@@ -1,38 +1,77 @@
 # Parsing rules
 
 # Tablas
-TablaVariables = {}
 TablaFunciones = {}
-current_type = 'void'
 
 # PROGRAMA
 def p_programa(t):
     '''programa : PROGRAMA ID SEMICOLON variables funciones PRINCIPAL LPAREN RPAREN LCORCHETE estatuto RCORCHETE'''
     t[0] = "COMPILADO" # t[0] es lo que tiene como valor programa
-    TablaFunciones[t[2]] = {'tipo': current_type, 'variables': ''}
+    TablaFunciones[t[2]] = {'tipo': 'void', 'variables': t[4]}
 
 # VARIABLES
 def p_variables(t):
     '''variables : VAR tipo COLON lista_ids SEMICOLON variables_1
                 | empty'''
+    TablaVariables = {}
+    #print('Array Var', t[4])
+    if(t[1] != None):
+        var_list = t[6]
+        for var in t[4]:
+            if var['name'] not in TablaVariables:
+                TablaVariables[var['name']] = {'tipo': t[2], 'dimension': var['dimension']}
+        var_list.update(TablaVariables)
+        t[0] = var_list
+    else:
+        t[0] = TablaVariables
 def p_variables_1(t):
     '''variables_1 : tipo COLON lista_ids SEMICOLON variables_1
                     | empty'''
+    TablaVariables = {}
+    if(t[1] != None):
+        var_list = t[5]
+        for var in t[3]:
+            if var['name'] not in TablaVariables:
+                TablaVariables[var['name']] = {'tipo': t[1], 'dimension': var['dimension']}
+        var_list.update(TablaVariables)
+        t[0] = var_list
+    else:
+        t[0] = TablaVariables
 
 # LISTA_IDS
 def p_lista_ids(t):
     '''lista_ids : identificadores lista'''
+    #Check if id is in current
+    array = t[2]
+    objeto = t[1]
+    array.append(objeto)
+
+    t[0] = array
 
 def p_lista(t):
     '''lista : COMMA identificadores lista
             | empty'''
+    if(t[1] == ','):
+        array = t[3]
+        objeto = t[2]
+        array.append(objeto)
+
+        t[0] = array
+    else:
+        lst = []
+        t[0] = lst
+        #print(t[0])
 
 # FUNCIONES
 def p_funciones(t):
     '''funciones : FUNCION tipo_retorno ID LPAREN parametros RPAREN SEMICOLON variables LCORCHETE estatuto RCORCHETE funciones
                 | empty'''
-    if(t[1] == 'funcion'):
-        TablaFunciones[t[3]] = {'tipo': t[2], 'variables': ''}
+    if(t[1] != None):
+        if(t[3] not in TablaFunciones):
+            TablaFunciones[t[3]] = {'tipo': t[2], 'variables': t[8]}
+        else:
+            print("La funcion ", t[3], " ya esta definida")
+            pass
 
 # TIPO_RETORNO
 def p_tipo_retorno(t):
@@ -47,8 +86,7 @@ def p_tipo(t):
     '''tipo : INT 
             | FLOAT 
             | CHAR'''
-    global current_type
-    current_type = t[1]
+    t[0] = t[1]
 
 #PARAMETROS
 def p_parametros(t):
@@ -85,8 +123,7 @@ def p_identificadores(t):
         dimension = 1
     if(len(t) > 5):
         dimension = 2
-    print(t[1])
-    TablaVariables[t[1]] = {'tipo': current_type, 'dimension': dimension}
+    t[0] = {'name':t[1], 'dimension': dimension}
 
 # TERMINOS
 def p_terminos(t):
@@ -201,11 +238,13 @@ def p_error(t):
 
 
 import sys
+import pprint
 import ply.yacc as yacc
 
 from lexer import tokens
 
 parser = yacc.yacc()
+pp = pprint.PrettyPrinter(indent=4)
 
 while True:
     try:
@@ -218,10 +257,7 @@ while True:
         f.close()
         if parser.parse(data) == "COMPILADO":
             print("Se compilo exitosamente.")
-            print(TablaFunciones)
-            print()
-            print()
-            print(TablaVariables)
+            pp.pprint(TablaFunciones)
     except EOFError:
         print(EOFError)
     if not s: continue

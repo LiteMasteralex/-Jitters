@@ -3,22 +3,6 @@ var int : x, i, k;
     float : y[2][2];
     char : nombre[5];
 
-funcion void voidFunction();
-  var int : subI;
-  {
-   
-  }
-
-funcion float floatFunction();
-  {
-    
-  }
-
-funcion int intFunction();
-  {
-    
-  }
-
 principal() {
 
 }
