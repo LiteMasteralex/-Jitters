@@ -2,6 +2,12 @@
 
 # Tablas
 TablaFunciones = {}
+OpStack = []
+OperStack = []
+TypeStack = []
+Quad = []
+countTemporales = 0
+countConstantes = 0
 
 # PROGRAMA
 def p_programa(t):
@@ -112,6 +118,8 @@ def p_estatuto_1(t):
 #ASIGNACION
 def p_asignacion(t):
     '''asignacion : identificadores ASIGNAR expresiones SEMICOLON'''
+    quad = [t[2], t[1]['name'], OpStack.pop()]
+    Quad.append(quad)
 
 # IDENTIFICADORES
 def p_identificadores(t):
@@ -131,6 +139,9 @@ def p_terminos(t):
                 | identificadores
                 | var_cte 
                 | funcion_retorno'''
+    if(t[1] != '('):
+        OpStack.append(t[1]['name'])
+        #TypeStack.append(type(t[1])) #Necesitamos ver que onda como conseguir el tipo especialmente para los identificadores
 
 
 # ESPECIALES
@@ -141,22 +152,53 @@ def p_especiales_1(t):
     '''especiales_1 : DETERMINANTE
                     | TRANSPUESTA
                     | INVERSA'''
+    OperStack.append(t[1])
 
 # FACTORES
 def p_factores(t):
     '''factores : especiales
                 | especiales factores_1 factores'''
+    global countTemporales
+    if(len(t) > 2):
+        if(OperStack[-1] == '*' or OperStack[-1] == '/'):
+            right_op = OpStack.pop()
+            left_op = OpStack.pop()
+            oper = OperStack.pop()
+            #res_type = Semantica[''] # Necesitamos ver lo de los tipos primero antes de la semantica
+            #if(res_type != 'err'):
+            result = 'temp' + str(countTemporales)
+            countTemporales = countTemporales + 1
+            quad = [oper, left_op, right_op, result]
+            Quad.append(quad)
+            OpStack.append(result)
+
+
 def p_factores_1(t):
     '''factores_1 : TIMES 
                   | DIVIDE'''
+    OperStack.append(t[1])
 
 # ARITMETICOS
 def p_aritmeticos(t):
     '''aritmeticos : factores
                     | factores aritmeticos_1 aritmeticos'''
+    global countTemporales
+    if(len(t) > 2):
+        if(OperStack[-1] == '+' or OperStack[-1] == '-'):
+            right_op = OpStack.pop()
+            left_op = OpStack.pop()
+            oper = OperStack.pop()
+            #res_type = Semantica[''] # Necesitamos ver lo de los tipos primero antes de la semantica
+            #if(res_type != 'err'):
+            result = 'temp' + str(countTemporales)
+            countTemporales = countTemporales + 1
+            quad = [oper, left_op, right_op, result]
+            Quad.append(quad)
+            OpStack.append(result)
 def p_aritmeticos_1(t):
     '''aritmeticos_1 : PLUS 
                      | MINUS'''
+    OperStack.append(t[1])
 
 # LOGICOS
 def p_logicos(t):
@@ -167,6 +209,7 @@ def p_logicos_1(t):
                     | GREATER
                     | EQUALS
                     | NOTEQUAL'''
+    OperStack.append(t[1])
 
 # EXPRESIONES
 def p_expresiones(t):
@@ -175,6 +218,7 @@ def p_expresiones(t):
 def p_expresiones_1(t):
     '''expresiones_1 : AND 
                      | OR'''
+    OperStack.append(t[1])
 
 # FUNCION RETORNO
 def p_funcion_retorno(t):
@@ -225,6 +269,7 @@ def p_var_cte(t):
     '''var_cte : CTECH
                | CTEI
                | CTEF'''
+    t[0] = {'name': t[1]}
 
 # EMPTY
 def p_empty(t):
@@ -235,6 +280,232 @@ def p_empty(t):
 
 def p_error(t):
     print("Syntax error at '%s'" % t.value)
+
+
+# Definicion de Cubo Semantico
+# Cubo Semantico
+Semantica = {
+    # INT
+    'int': {
+        'int': {
+            '+': 'int',
+            '-': 'int',
+            '*': 'int',
+            '/': 'float',
+            '>': 'bool', 
+            '<': 'bool',
+            '!=': 'bool',
+            '==': 'bool',
+            '&': 'err',
+            '|': 'err',
+            '=': 'int'
+        },
+        'float': {
+            '+': 'err',
+            '-': 'err',
+            '*': 'float',
+            '/': 'err',
+            '>': 'err', 
+            '<': 'err',
+            '!=': 'err',
+            '==': 'err',
+            '&': 'err',
+            '|': 'err',
+            '=': 'err'
+        },
+        'char': {
+            '+': 'err',
+            '-': 'err',
+            '*': 'err',
+            '/': 'err',
+            '>': 'err', 
+            '<': 'err',
+            '!=': 'err',
+            '==': 'err',
+            '&': 'err',
+            '|': 'err',
+            '=': 'err'
+        },
+        'bool': {
+            '+': 'err',
+            '-': 'err',
+            '*': 'err',
+            '/': 'err',
+            '>': 'err', 
+            '<': 'err',
+            '!=': 'err',
+            '==': 'err',
+            '&': 'err',
+            '|': 'err',
+            '=': 'err'
+        }
+    },
+    #Float
+    'float': {
+        'int': {
+            '+': 'float',
+            '-': 'float',
+            '*': 'float',
+            '/': 'float',
+            '>': 'bool', 
+            '<': 'bool',
+            '!=': 'bool',
+            '==': 'bool',
+            '&': 'err',
+            '|': 'err',
+            '=': 'err'
+        },
+        'float': {
+            '+': 'float',
+            '-': 'float',
+            '*': 'float',
+            '/': 'float',
+            '>': 'bool', 
+            '<': 'bool',
+            '!=': 'bool',
+            '==': 'bool',
+            '&': 'err',
+            '|': 'err',
+            '=': 'float'
+        },
+        'char': {
+            '+': 'err',
+            '-': 'err',
+            '*': 'err',
+            '/': 'err',
+            '>': 'err', 
+            '<': 'err',
+            '!=': 'err',
+            '==': 'err',
+            '&': 'err',
+            '|': 'err',
+            '=': 'err'
+        },
+        'bool': {
+            '+': 'err',
+            '-': 'err',
+            '*': 'err',
+            '/': 'err',
+            '>': 'err', 
+            '<': 'err',
+            '!=': 'err',
+            '==': 'err',
+            '&': 'err',
+            '|': 'err',
+            '=': 'err'
+        }
+    },
+    # CHAR
+    'char': {
+        'int': {
+            '+': 'err',
+            '-': 'err',
+            '*': 'err',
+            '/': 'err',
+            '>': 'err', 
+            '<': 'err',
+            '!=': 'err',
+            '==': 'err',
+            '&': 'err',
+            '|': 'err',
+            '=': 'err'
+        },
+        'float': {
+            '+': 'err',
+            '-': 'err',
+            '*': 'err',
+            '/': 'err',
+            '>': 'err', 
+            '<': 'err',
+            '!=': 'err',
+            '==': 'err',
+            '&': 'err',
+            '|': 'err',
+            '=': 'err'
+        },
+        'char': {
+            '+': 'err',
+            '-': 'err',
+            '*': 'err',
+            '/': 'err',
+            '>': 'err', 
+            '<': 'err',
+            '!=': 'bool',
+            '==': 'bool',
+            '&': 'err',
+            '|': 'err',
+            '=': 'char'
+        },
+        'bool': {
+            '+': 'err',
+            '-': 'err',
+            '*': 'err',
+            '/': 'err',
+            '>': 'err', 
+            '<': 'err',
+            '!=': 'err',
+            '==': 'err',
+            '&': 'err',
+            '|': 'err',
+            '=': 'err'
+        }
+    },
+    # BOOL
+    'bool': {
+        'int': {
+            '+': 'err',
+            '-': 'err',
+            '*': 'err',
+            '/': 'err',
+            '>': 'err', 
+            '<': 'err',
+            '!=': 'err',
+            '==': 'err',
+            '&': 'err',
+            '|': 'err',
+            '=': 'err'
+        },
+        'float': {
+            '+': 'err',
+            '-': 'err',
+            '*': 'err',
+            '/': 'err',
+            '>': 'err', 
+            '<': 'err',
+            '!=': 'err',
+            '==': 'err',
+            '&': 'err',
+            '|': 'err',
+            '=': 'err'
+        },
+        'char': {
+            '+': 'err',
+            '-': 'err',
+            '*': 'err',
+            '/': 'err',
+            '>': 'err', 
+            '<': 'err',
+            '!=': 'err',
+            '==': 'err',
+            '&': 'err',
+            '|': 'err',
+            '=': 'err'
+        },
+        'bool': {
+            '+': 'err',
+            '-': 'err',
+            '*': 'err',
+            '/': 'err',
+            '>': 'err', 
+            '<': 'err',
+            '!=': 'bool',
+            '==': 'bool',
+            '&': 'bool',
+            '|': 'bool',
+            '=': 'bool'
+        }
+    }
+}
 
 
 import sys
@@ -257,7 +528,8 @@ while True:
         f.close()
         if parser.parse(data) == "COMPILADO":
             print("Se compilo exitosamente.")
-            pp.pprint(TablaFunciones)
+            #pp.pprint(TablaFunciones)
+            pp.pprint(Quad)
     except EOFError:
         print(EOFError)
     if not s: continue

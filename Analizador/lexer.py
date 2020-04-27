@@ -81,7 +81,7 @@ def t_ID(t):
 
 # Define una variable float 
 def t_CTEF(t):
-    r'[0-9]+(.[0-9]+)*'
+    r'[0-9]+.[0-9]+'
     t.value = float(t.value)
     return t
 

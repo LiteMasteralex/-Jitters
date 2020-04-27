@@ -1,12 +1,16 @@
 Programa myProgram;
+var int : x;
+	float : y;
+	char : j;
 
 principal() {
-  x = x + 5 + 5 + 5;
-  x = function(x);
-  x = y | z;
-  x = x * 5;
-  x = x < 8;
-  x = x$;
+  x = 5 + 5 + 5;
+#  x = function(x);
+#  x = y | z;
+  y = x * 5;
+#  x = x < 8;
+#  x = x$;
   x = 10;
   x = 5 + (5);
+  j = 'a';
 }
