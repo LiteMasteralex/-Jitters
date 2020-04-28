@@ -3,21 +3,6 @@ var int : i, j, k;
   float : pi[5][5];
   char : stop[10];
 
-funcion void voidFunction();
-  var int : subI;
-  {
-
-  }
-
-funcion float voidFunction();
-  {
-
-  }
-
 principal() {
-  j = 10;
-  x = 5.2;
-  msg = 'c';
-  myId = Funcion() + FuncionOtra(x, y, z) + 24;
 
 }

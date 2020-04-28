@@ -6,7 +6,7 @@ var int : i, j, k;
 funcion void voidFunction();
   var int : subI;
   {
-
+    subI = 50 * 8 / 10 + 35 * 9 - 50;
   }
 
 funcion float floatFunction();
@@ -18,6 +18,6 @@ principal() {
   j = 10;
   x = 5.2;
   msg = 'c';
-  myId = Funcion() + FuncionOtra(x, y, z) + 24;
+  #myId = Funcion() + FuncionOtra(x, y, z) + 24;
 
 }

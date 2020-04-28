@@ -2,47 +2,62 @@
 
 # Tablas
 TablaFunciones = {}
+TablaVariables = {}
+Globales = {}
+
+# Quadruplos
 OpStack = []
 OperStack = []
 TypeStack = []
 Quad = []
+
+#Memoria
 countTemporales = 0
 countConstantes = 0
+
+# Auxiliares
+current_type = 'void'
+const_flag = False
+glob_flag = True
 
 # PROGRAMA
 def p_programa(t):
     '''programa : PROGRAMA ID SEMICOLON variables funciones PRINCIPAL LPAREN RPAREN LCORCHETE estatuto RCORCHETE'''
     t[0] = "COMPILADO" # t[0] es lo que tiene como valor programa
-    TablaFunciones[t[2]] = {'tipo': 'void', 'variables': t[4]}
+    #TablaFunciones[t[2]] = {'tipo': 'void', 'variables': t[4]} # Se cambio para que esta tabla de variable sean las globales
+    global Globales
+    TablaFunciones[t[2]] = {'tipo': 'void', 'variables': Globales}
+    TablaVariables = {}
 
 # VARIABLES
 def p_variables(t):
     '''variables : VAR tipo COLON lista_ids SEMICOLON variables_1
                 | empty'''
-    TablaVariables = {}
-    #print('Array Var', t[4])
+    global TablaVariables
+    global Globales
+    global glob_flag
     if(t[1] != None):
-        var_list = t[6]
         for var in t[4]:
             if var['name'] not in TablaVariables:
                 TablaVariables[var['name']] = {'tipo': t[2], 'dimension': var['dimension']}
-        var_list.update(TablaVariables)
-        t[0] = var_list
-    else:
-        t[0] = TablaVariables
+            else:
+                print("La variable ", var['name'], " ya esta definida")
+        if(glob_flag):
+            Globales = TablaVariables
+            glob_flag = False
+            TablaVariables = {}
+
 def p_variables_1(t):
     '''variables_1 : tipo COLON lista_ids SEMICOLON variables_1
                     | empty'''
-    TablaVariables = {}
+    global TablaVariables
     if(t[1] != None):
-        var_list = t[5]
         for var in t[3]:
             if var['name'] not in TablaVariables:
                 TablaVariables[var['name']] = {'tipo': t[1], 'dimension': var['dimension']}
-        var_list.update(TablaVariables)
-        t[0] = var_list
-    else:
-        t[0] = TablaVariables
+            else:
+                print("La variable ", var['name'], " ya esta definida")
+
 
 # LISTA_IDS
 def p_lista_ids(t):
@@ -73,11 +88,13 @@ def p_funciones(t):
     '''funciones : FUNCION tipo_retorno ID LPAREN parametros RPAREN SEMICOLON variables LCORCHETE estatuto RCORCHETE funciones
                 | empty'''
     if(t[1] != None):
+        global TablaVariables
         if(t[3] not in TablaFunciones):
-            TablaFunciones[t[3]] = {'tipo': t[2], 'variables': t[8]}
+            TablaFunciones[t[3]] = {'tipo': t[2], 'variables': TablaVariables}
         else:
             print("La funcion ", t[3], " ya esta definida")
             pass
+        TablaVariables = {}
 
 # TIPO_RETORNO
 def p_tipo_retorno(t):
@@ -119,13 +136,15 @@ def p_estatuto_1(t):
 def p_asignacion(t):
     '''asignacion : identificadores ASIGNAR expresiones SEMICOLON'''
     quad = [t[2], t[1]['name'], OpStack.pop()]
+    # TODO: Verificar que existan los operadores y que la semantica se pueda
     Quad.append(quad)
 
 # IDENTIFICADORES
 def p_identificadores(t):
-    '''identificadores : ID LBRACKET CTEF RBRACKET LBRACKET CTEF RBRACKET
-                        | ID LBRACKET CTEF RBRACKET
+    '''identificadores : ID LBRACKET CTEI RBRACKET LBRACKET CTEI RBRACKET
+                        | ID LBRACKET CTEI RBRACKET
                         | ID '''
+    global current_type
     dimension = 0
     if(len(t) > 2):
         dimension = 1
@@ -139,9 +158,19 @@ def p_terminos(t):
                 | identificadores
                 | var_cte 
                 | funcion_retorno'''
+    global current_type
+    global const_flag
+    global Globales
     if(t[1] != '('):
+        if(const_flag):
+            # Buscar en mi tabla de variables
+            if t[1]['name'] in Globales:
+                current_type = Globales[t[1]['name']]['tipo']
+            else:
+                print("La variable ", t[1]['name'], " no esta definida") 
+        const_flag = True
         OpStack.append(t[1]['name'])
-        #TypeStack.append(type(t[1])) #Necesitamos ver que onda como conseguir el tipo especialmente para los identificadores
+        TypeStack.append(current_type)
 
 
 # ESPECIALES
@@ -161,16 +190,20 @@ def p_factores(t):
     global countTemporales
     if(len(t) > 2):
         if(OperStack[-1] == '*' or OperStack[-1] == '/'):
-            right_op = OpStack.pop()
+            right_op = OpStack.pop() # TODO: ver si se puede pasar toda esta logica a una funcion para simplificar el codifo
+            right_type = TypeStack.pop()
             left_op = OpStack.pop()
+            left_type = TypeStack.pop()
             oper = OperStack.pop()
-            #res_type = Semantica[''] # Necesitamos ver lo de los tipos primero antes de la semantica
-            #if(res_type != 'err'):
+            res_type = Semantica[right_type][left_type][oper]
+            if(res_type == 'err'):
+                print("Error de semantica!!!! ", right_type, left_type, oper)
             result = 'temp' + str(countTemporales)
             countTemporales = countTemporales + 1
             quad = [oper, left_op, right_op, result]
             Quad.append(quad)
             OpStack.append(result)
+            TypeStack.append(res_type)
 
 
 def p_factores_1(t):
@@ -186,15 +219,19 @@ def p_aritmeticos(t):
     if(len(t) > 2):
         if(OperStack[-1] == '+' or OperStack[-1] == '-'):
             right_op = OpStack.pop()
+            right_type = TypeStack.pop()
             left_op = OpStack.pop()
+            left_type = TypeStack.pop()
             oper = OperStack.pop()
-            #res_type = Semantica[''] # Necesitamos ver lo de los tipos primero antes de la semantica
-            #if(res_type != 'err'):
+            res_type = Semantica[right_type][left_type][oper]
+            if(res_type == 'err'):
+                print("Error de semantica!!!!", right_type, left_type, oper)
             result = 'temp' + str(countTemporales)
             countTemporales = countTemporales + 1
             quad = [oper, left_op, right_op, result]
             Quad.append(quad)
             OpStack.append(result)
+            TypeStack.append(res_type)
 def p_aritmeticos_1(t):
     '''aritmeticos_1 : PLUS 
                      | MINUS'''
@@ -269,7 +306,17 @@ def p_var_cte(t):
     '''var_cte : CTECH
                | CTEI
                | CTEF'''
+    global const_flag
+    global current_type #TODO: Ver como se va a terminar haciendo, como esta actualmente es un patch para que funcione con lo que tenemos
+    if(isinstance(t[1], int)):
+        current_type = 'int'
+    elif(isinstance(t[1], str)):
+        current_type = 'char'
+    elif(isinstance(t[1], float)):
+        current_type = 'float'
+
     t[0] = {'name': t[1]}
+    const_flag = False
 
 # EMPTY
 def p_empty(t):
@@ -301,8 +348,8 @@ Semantica = {
             '=': 'int'
         },
         'float': {
-            '+': 'err',
-            '-': 'err',
+            '+': 'float',
+            '-': 'float',
             '*': 'float',
             '/': 'err',
             '>': 'err', 
@@ -353,7 +400,7 @@ Semantica = {
             '==': 'bool',
             '&': 'err',
             '|': 'err',
-            '=': 'err'
+            '=': 'float'
         },
         'float': {
             '+': 'float',
@@ -528,8 +575,9 @@ while True:
         f.close()
         if parser.parse(data) == "COMPILADO":
             print("Se compilo exitosamente.")
-            #pp.pprint(TablaFunciones)
+            pp.pprint(TablaFunciones)
             pp.pprint(Quad)
+            pp.pprint(Globales)
     except EOFError:
         print(EOFError)
     if not s: continue

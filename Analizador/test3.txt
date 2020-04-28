@@ -1,5 +1,5 @@
 Programa myProgram;
-var int : x;
+var int : x, z, k;
 	float : y;
 	char : j;
 
