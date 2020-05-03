@@ -20,6 +20,38 @@ current_type = 'void'
 const_flag = False
 glob_flag = True
 
+def clearEverything():
+    # Tablas
+    TablaFunciones = {}
+    TablaVariables = {}
+    Globales = {}
+
+    # Quadruplos
+    OpStack = []
+    OperStack = []
+    TypeStack = []
+    Quad.clear()
+
+    #Memoria
+    global countTemporales, countConstantes
+    countTemporales = 0
+    countConstantes = 0
+
+    # Auxiliares
+    global current_type, const_flag, glob_flag
+    current_type = 'void'
+    const_flag = False
+    glob_flag = True
+
+def checkTables():
+    global current_type, const_flag, Globales
+    # Buscar en las tablas de Variables
+    if t[1]['name'] in Globales:
+        current_type = Globales[t[1]['name']]['tipo']
+    else:
+        print("La variable ", t[1]['name'], " no esta definida") 
+    print("This exists!!")
+
 # PROGRAMA
 def p_programa(t):
     '''programa : PROGRAMA ID SEMICOLON variables funciones PRINCIPAL LPAREN RPAREN LCORCHETE estatuto RCORCHETE'''
@@ -33,9 +65,7 @@ def p_programa(t):
 def p_variables(t):
     '''variables : VAR tipo COLON lista_ids SEMICOLON variables_1
                 | empty'''
-    global TablaVariables
-    global Globales
-    global glob_flag
+    global TablaVariables, Globales, glob_flag
     if(t[1] != None):
         for var in t[4]:
             if var['name'] not in TablaVariables:
@@ -158,9 +188,7 @@ def p_terminos(t):
                 | identificadores
                 | var_cte 
                 | funcion_retorno'''
-    global current_type
-    global const_flag
-    global Globales
+    global current_type, const_flag, Globales
     if(t[1] != '('):
         if(const_flag):
             # Buscar en mi tabla de variables
@@ -306,8 +334,7 @@ def p_var_cte(t):
     '''var_cte : CTECH
                | CTEI
                | CTEF'''
-    global const_flag
-    global current_type #TODO: Ver como se va a terminar haciendo, como esta actualmente es un patch para que funcione con lo que tenemos
+    global const_flag, current_type #TODO: Ver como se va a terminar haciendo, como esta actualmente es un patch para que funcione con lo que tenemos
     if(isinstance(t[1], int)):
         current_type = 'int'
     elif(isinstance(t[1], str)):
@@ -575,9 +602,11 @@ while True:
         f.close()
         if parser.parse(data) == "COMPILADO":
             print("Se compilo exitosamente.")
+            print('===== Funciones =====')
             pp.pprint(TablaFunciones)
+            print('===== QUADS =====')
             pp.pprint(Quad)
-            pp.pprint(Globales)
+            clearEverything()
     except EOFError:
         print(EOFError)
     if not s: continue
