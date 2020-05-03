@@ -8,6 +8,7 @@ TablaVariables = {}
 OpStack = []
 OperStack = []
 TypeStack = []
+JumpStack = []
 Quad = []
 
 #Memoria
@@ -16,8 +17,8 @@ countConstantes = 0
 
 # Auxiliares
 current_type = 'void'
-current_context = ''
-const_flag = False
+current_context = 'global'
+const_flag = True
 
 def clearEverything():
     # Tablas
@@ -37,9 +38,10 @@ def clearEverything():
     countConstantes = 0
 
     # Auxiliares
-    global current_type, const_flag
+    global current_type, const_flag, current_context
     current_type = 'void'
-    const_flag = False
+    const_flag = True
+    current_context = 'global'
 
 # PROGRAMA
 def p_programa(t):
@@ -168,8 +170,8 @@ def p_estatuto_1(t):
 #ASIGNACION
 def p_asignacion(t):
     '''asignacion : check_id ASIGNAR expresiones SEMICOLON'''
-    quad = [t[2], t[1]['name'], OpStack.pop()]
     # TODO: Verificar que existan los operadores y que la semantica se pueda
+    quad = [t[2], t[1]['name'], OpStack.pop()]
     Quad.append(quad)
 
 def p_check_id(t):
@@ -285,6 +287,24 @@ def p_aritmeticos_1(t):
 def p_logicos(t):
     '''logicos : aritmeticos
                     | aritmeticos logicos_1 logicos'''
+    global countTemporales
+    if(len(t) > 2):
+        if(OperStack[-1] == '<' or OperStack[-1] == '>' or OperStack[-1] == '==' or OperStack[-1] == '!='):
+            right_op = OpStack.pop()
+            right_type = TypeStack.pop()
+            left_op = OpStack.pop()
+            left_type = TypeStack.pop()
+            oper = OperStack.pop()
+            print(TablaFunciones)
+            res_type = Semantica[right_type][left_type][oper]
+            if(res_type == 'err'):
+                print("Error de semantica!!!!", right_type, left_type, oper)
+            result = 'temp' + str(countTemporales)
+            countTemporales = countTemporales + 1
+            quad = [oper, left_op, right_op, result]
+            Quad.append(quad)
+            OpStack.append(result)
+            TypeStack.append(res_type)
 def p_logicos_1(t):
     '''logicos_1 : LESS 
                     | GREATER
@@ -331,10 +351,22 @@ def p_escritura_2(t):
 
 # DECISION
 def p_decision(t):
-    '''decision : SI LPAREN expresiones RPAREN ENTONCES LCORCHETE estatuto RCORCHETE decision_1'''
+    '''decision : SI LPAREN expresiones RPAREN if_jump ENTONCES LCORCHETE estatuto RCORCHETE decision_1'''
+    jump_idx = JumpStack.pop()
+    Quad[jump_idx][-1] = len(Quad)
 def p_decision_1(t):
     '''decision_1 : SINO LCORCHETE estatuto RCORCHETE
                     | empty'''
+
+def p_if_jump(t):
+    '''if_jump :'''
+    exp_type = TypeStack.pop()
+    if(exp_type != 'bool'):
+        print("Type-mismatch")
+    result = OpStack.pop()
+    quad = ['GotoF', result, '', '____']
+    Quad.append(quad)
+    JumpStack.append(len(Quad) - 1)
 
 # REPETICION
 def p_repeticion(t):
