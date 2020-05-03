@@ -3,7 +3,6 @@
 # Tablas
 TablaFunciones = {}
 TablaVariables = {}
-Globales = {}
 
 # Quadruplos
 OpStack = []
@@ -17,19 +16,19 @@ countConstantes = 0
 
 # Auxiliares
 current_type = 'void'
+current_context = ''
 const_flag = False
-glob_flag = True
 
 def clearEverything():
     # Tablas
+    global TablaFunciones, TablaVariables
     TablaFunciones = {}
     TablaVariables = {}
-    Globales = {}
 
     # Quadruplos
-    OpStack = []
-    OperStack = []
-    TypeStack = []
+    OpStack.clear()
+    OperStack.clear()
+    TypeStack.clear()
     Quad.clear()
 
     #Memoria
@@ -38,44 +37,41 @@ def clearEverything():
     countConstantes = 0
 
     # Auxiliares
-    global current_type, const_flag, glob_flag
+    global current_type, const_flag
     current_type = 'void'
     const_flag = False
-    glob_flag = True
-
-def checkTables():
-    global current_type, const_flag, Globales
-    # Buscar en las tablas de Variables
-    if t[1]['name'] in Globales:
-        current_type = Globales[t[1]['name']]['tipo']
-    else:
-        print("La variable ", t[1]['name'], " no esta definida") 
-    print("This exists!!")
 
 # PROGRAMA
 def p_programa(t):
-    '''programa : PROGRAMA ID SEMICOLON variables funciones PRINCIPAL LPAREN RPAREN LCORCHETE estatuto RCORCHETE'''
+    '''programa : PROGRAMA ID SEMICOLON define_global variables define_var_global funciones PRINCIPAL LPAREN RPAREN LCORCHETE estatuto RCORCHETE'''
+    global TablaFunciones
     t[0] = "COMPILADO" # t[0] es lo que tiene como valor programa
     #TablaFunciones[t[2]] = {'tipo': 'void', 'variables': t[4]} # Se cambio para que esta tabla de variable sean las globales
-    global Globales
-    TablaFunciones[t[2]] = {'tipo': 'void', 'variables': Globales}
+    TablaFunciones[t[2]] = TablaFunciones['global']
+    del TablaFunciones['global']
+
+def p_define_global(t):
+    '''define_global :'''
+    global TablaFunciones
+    TablaFunciones['global'] = {'tipo': 'void', 'variables': {}}
+
+def p_define_var_global(t):
+    '''define_var_global :'''
+    global TablaFunciones, TablaVariables
+    TablaFunciones['global']['variables'] = TablaVariables
     TablaVariables = {}
 
 # VARIABLES
 def p_variables(t):
     '''variables : VAR tipo COLON lista_ids SEMICOLON variables_1
                 | empty'''
-    global TablaVariables, Globales, glob_flag
+    global TablaVariables
     if(t[1] != None):
         for var in t[4]:
             if var['name'] not in TablaVariables:
                 TablaVariables[var['name']] = {'tipo': t[2], 'dimension': var['dimension']}
             else:
                 print("La variable ", var['name'], " ya esta definida")
-        if(glob_flag):
-            Globales = TablaVariables
-            glob_flag = False
-            TablaVariables = {}
 
 def p_variables_1(t):
     '''variables_1 : tipo COLON lista_ids SEMICOLON variables_1
@@ -115,16 +111,23 @@ def p_lista(t):
 
 # FUNCIONES
 def p_funciones(t):
-    '''funciones : FUNCION tipo_retorno ID LPAREN parametros RPAREN SEMICOLON variables LCORCHETE estatuto RCORCHETE funciones
+    '''funciones : FUNCION define_funct LPAREN parametros RPAREN SEMICOLON variables define_var_funct LCORCHETE estatuto RCORCHETE funciones
                 | empty'''
-    if(t[1] != None):
-        global TablaVariables
-        if(t[3] not in TablaFunciones):
-            TablaFunciones[t[3]] = {'tipo': t[2], 'variables': TablaVariables}
-        else:
-            print("La funcion ", t[3], " ya esta definida")
-            pass
-        TablaVariables = {}
+
+def p_define_funct(t):
+    '''define_funct : tipo_retorno ID'''
+    global TablaFunciones, current_context
+    if(t[2] not in TablaFunciones):
+        TablaFunciones[t[2]] = {'tipo': t[1], 'variables': {}}
+        current_context = t[2]
+    else:
+        print("La funcion ", t[2], " ya esta definida")
+
+def p_define_var_funct(t):
+    '''define_var_funct :'''
+    global TablaFunciones, TablaVariables, current_context
+    TablaFunciones[current_context]['variables'] = TablaVariables
+    TablaVariables = {}
 
 # TIPO_RETORNO
 def p_tipo_retorno(t):
@@ -164,10 +167,21 @@ def p_estatuto_1(t):
 
 #ASIGNACION
 def p_asignacion(t):
-    '''asignacion : identificadores ASIGNAR expresiones SEMICOLON'''
+    '''asignacion : check_id ASIGNAR expresiones SEMICOLON'''
     quad = [t[2], t[1]['name'], OpStack.pop()]
     # TODO: Verificar que existan los operadores y que la semantica se pueda
     Quad.append(quad)
+
+def p_check_id(t):
+    '''check_id : identificadores'''
+    # Buscar en tablas de variables
+    if t[1]['name'] in TablaFunciones[current_context]['variables']:
+        current_type = TablaFunciones[current_context]['variables'][t[1]['name']]['tipo']
+    elif t[1]['name'] in TablaFunciones['global']['variables']:
+        current_type = TablaFunciones['global']['variables'][t[1]['name']]['tipo']
+    else:
+        print("La variable ", t[1]['name'], " no esta definida") 
+    t[0] = t[1]
 
 # IDENTIFICADORES
 def p_identificadores(t):
@@ -188,12 +202,14 @@ def p_terminos(t):
                 | identificadores
                 | var_cte 
                 | funcion_retorno'''
-    global current_type, const_flag, Globales
+    global current_type, const_flag
     if(t[1] != '('):
         if(const_flag):
-            # Buscar en mi tabla de variables
-            if t[1]['name'] in Globales:
-                current_type = Globales[t[1]['name']]['tipo']
+            # Buscar en tablas de variables
+            if t[1]['name'] in TablaFunciones[current_context]['variables']:
+                current_type = TablaFunciones[current_context]['variables'][t[1]['name']]['tipo']
+            elif t[1]['name'] in TablaFunciones['global']['variables']:
+                current_type = TablaFunciones['global']['variables'][t[1]['name']]['tipo']
             else:
                 print("La variable ", t[1]['name'], " no esta definida") 
         const_flag = True

@@ -10,8 +10,9 @@ funcion void voidFunction();
   }
 
 funcion float floatFunction();
+  var float : subJ;
   {
-
+    i = k * j;
   }
 
 principal() {

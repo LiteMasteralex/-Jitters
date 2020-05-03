@@ -5,7 +5,8 @@ var int : i, j, k;
   
 # Compentario de la voidFunction()
 funcion void voidFunction();
-  var int : subI;
+  var int : subI, x, y, z;
+      float : X, Y, Z;
   {
     si(x < 50)
     entonces {
