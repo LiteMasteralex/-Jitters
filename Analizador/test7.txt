@@ -1,0 +1,23 @@
+# Se prueba procesos encapusulados
+
+Programa myProgram;
+var int : x, y, z;
+
+principal() {
+	
+    escribe(x); # TODO(): nos falta incorporar escribe a los cuadruplos. 
+	
+	mientras(x<y) haz {
+		si(x < y) entonces {
+		    #Haz algo
+            x = y;
+        }
+        sino {
+            x = z;
+        }
+        y = x;
+	}
+
+	z = x + 1;
+}
+
