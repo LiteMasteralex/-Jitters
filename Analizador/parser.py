@@ -354,7 +354,7 @@ def p_decision(t):
     jump_idx = JumpStack.pop()
     Quad[jump_idx][-1] = len(Quad)
 def p_decision_1(t):
-    '''decision_1 : SINO LCORCHETE estatuto RCORCHETE
+    '''decision_1 : if_else SINO LCORCHETE estatuto RCORCHETE
                     | empty'''
 
 def p_if_jump(t):
@@ -362,17 +362,38 @@ def p_if_jump(t):
     exp_type = TypeStack.pop()
     if(exp_type != 'bool'):
         print("Type-mismatch")
-    result = OpStack.pop()
-    quad = ['GotoF', result, '', '____']
+    else:
+        result = OpStack.pop()
+        quad = ['GotoF', result, '', '____']
+        Quad.append(quad)
+        JumpStack.append(len(Quad) - 1)
+
+def p_if_else(t):
+    '''if_else :'''
+    false = JumpStack.pop()
+    quad = ['Goto', '', '', '____']
     Quad.append(quad)
     JumpStack.append(len(Quad) - 1)
+    Quad[false][-1] = len(Quad)
+
 
 # REPETICION
 def p_repeticion(t):
     '''repeticion : repeticion_cond 
                   | repeticion_no_cond'''
 def p_repeticion_cond(t):
-    '''repeticion_cond : MIENTRAS LPAREN expresiones RPAREN HAZ LCORCHETE estatuto RCORCHETE'''
+    '''repeticion_cond : mark_tag MIENTRAS LPAREN expresiones RPAREN if_jump HAZ LCORCHETE estatuto RCORCHETE'''
+    end = JumpStack.pop()
+    return_ = JumpStack.pop()
+    quad = ['Goto', '', '', return_]
+    Quad.append(quad)
+    Quad[end][-1] = len(Quad)
+
+
+def p_mark_tag(t):
+    '''mark_tag :'''
+    JumpStack.append(len(Quad))
+
 def p_repeticion_no_cond(t):
     '''repeticion_no_cond : DESDE asignacion HASTA expresiones HACER LCORCHETE estatuto RCORCHETE'''
 
