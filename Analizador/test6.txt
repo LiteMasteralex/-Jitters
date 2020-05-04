@@ -6,5 +6,16 @@ principal() {
 		#Haz algo
 		x = y;
 	}
-	x = z;
+	sino {
+		x = z;
+	}
+
+	y = x;
+
+	mientras(x<y) haz {
+		x = z + 1;
+		z = x;
+	}
+
+	y = x;
 }
