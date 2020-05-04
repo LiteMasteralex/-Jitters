@@ -4,5 +4,7 @@ var int : x, y, z;
 principal() {
 	si(x < y) entonces {
 		#Haz algo
+		x = y;
 	}
+	x = z;
 }

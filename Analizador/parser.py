@@ -295,7 +295,6 @@ def p_logicos(t):
             left_op = OpStack.pop()
             left_type = TypeStack.pop()
             oper = OperStack.pop()
-            print(TablaFunciones)
             res_type = Semantica[right_type][left_type][oper]
             if(res_type == 'err'):
                 print("Error de semantica!!!!", right_type, left_type, oper)
