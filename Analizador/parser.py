@@ -222,7 +222,7 @@ def p_terminos(t):
         TypeStack.append(current_type)
 
 
-# ESPECIALES
+# ESPECIALES TODO: Ver como se va a estar manejando matrizes (incluye tambien en las otras reglas)
 def p_especiales(t):
     '''especiales : terminos
                     | terminos especiales_1'''
