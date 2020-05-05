@@ -9,6 +9,7 @@ OpStack = []
 OperStack = []
 TypeStack = []
 JumpStack = []
+ForStack = []
 Quad = []
 
 #Memoria
@@ -173,10 +174,12 @@ def p_asignacion(t):
     # TODO: Verificar que existan los operadores y que la semantica se pueda
     quad = [t[2], t[1]['name'], OpStack.pop()]
     Quad.append(quad)
+    t[0] = t[1]['name']
 
 def p_check_id(t):
     '''check_id : identificadores'''
     # Buscar en tablas de variables
+    global current_type
     if t[1]['name'] in TablaFunciones[current_context]['variables']:
         current_type = TablaFunciones[current_context]['variables'][t[1]['name']]['tipo']
     elif t[1]['name'] in TablaFunciones['global']['variables']:
@@ -315,6 +318,23 @@ def p_logicos_1(t):
 def p_expresiones(t):
     '''expresiones : logicos
                     | logicos expresiones_1 expresiones'''
+    global countTemporales
+    if(len(t) > 2):
+        if(OperStack[-1] == '&' or OperStack[-1] == '|'):
+            right_op = OpStack.pop()
+            right_type = TypeStack.pop()
+            left_op = OpStack.pop()
+            left_type = TypeStack.pop()
+            oper = OperStack.pop()
+            res_type = Semantica[right_type][left_type][oper]
+            if(res_type == 'err'):
+                print("Error de semantica!!!!", right_type, left_type, oper)
+            result = 'temp' + str(countTemporales)
+            countTemporales = countTemporales + 1
+            quad = [oper, left_op, right_op, result]
+            Quad.append(quad)
+            OpStack.append(result)
+            TypeStack.append(res_type)
 def p_expresiones_1(t):
     '''expresiones_1 : AND 
                      | OR'''
@@ -370,11 +390,11 @@ def p_if_jump(t):
 
 def p_if_else(t):
     '''if_else :'''
-    false = JumpStack.pop()
+    jump_idx = JumpStack.pop()
     quad = ['Goto', '', '', '____']
     Quad.append(quad)
     JumpStack.append(len(Quad) - 1)
-    Quad[false][-1] = len(Quad)
+    Quad[jump_idx][-1] = len(Quad)
 
 
 # REPETICION
@@ -395,7 +415,62 @@ def p_mark_tag(t):
     JumpStack.append(len(Quad))
 
 def p_repeticion_no_cond(t):
-    '''repeticion_no_cond : DESDE asignacion HASTA expresiones HACER LCORCHETE estatuto RCORCHETE'''
+    '''repeticion_no_cond : DESDE iter_desde HASTA comparacion_desde HACER LCORCHETE estatuto jump_back RCORCHETE'''
+
+def p_iter_desde(t):
+    '''iter_desde : asignacion'''
+    global countTemporales
+    quad = ['Goto', '', '', '____']
+    Quad.append(quad)
+    JumpStack.append(len(Quad) - 1)
+    left_op = t[1]
+    left_type = current_type
+    right_op = 1
+    right_type = 'int'
+    oper = '+'
+    res_type = Semantica[right_type][left_type][oper]
+    if(res_type == 'err'):
+        print("Error de semantica!!!!", right_type, left_type, oper)
+    result = 'temp' + str(countTemporales)
+    countTemporales = countTemporales + 1
+    quad = [oper, left_op, right_op, result]
+    #Jump
+    ForStack.append(len(Quad))
+    Quad.append(quad)
+    quad = ['=', t[1], result]
+    Quad.append(quad)
+    OpStack.append(t[1])
+    TypeStack.append(left_type)
+
+def p_comparacion_desde(t):
+    '''comparacion_desde : expresiones'''
+    global countTemporales
+    right_op = OpStack.pop()
+    right_type = TypeStack.pop()
+    left_op = OpStack.pop()
+    left_type = TypeStack.pop()
+    oper = '<'
+    res_type = Semantica[right_type][left_type][oper]
+    if(res_type == 'err'):
+        print("Error de semantica!!!!", right_type, left_type, oper)
+    result = 'temp' + str(countTemporales)
+    countTemporales = countTemporales + 1
+    jump_idx = JumpStack.pop()
+    Quad[jump_idx][-1] = len(Quad)
+    quad = [oper, left_op, right_op, result]
+    Quad.append(quad)
+    quad = ['GotoF', result, '', '____']
+    Quad.append(quad)
+    JumpStack.append(len(Quad) - 1)
+
+def p_jump_back(t):
+    '''jump_back :'''
+    quad = ['Goto', '', '', ForStack.pop()]
+    Quad.append(quad)
+    jump_idx = JumpStack.pop()
+    Quad[jump_idx][-1] = len(Quad)
+
+
 
 #VAR_CTE
 def p_var_cte(t):
@@ -673,7 +748,8 @@ while True:
             print('===== Funciones =====')
             pp.pprint(TablaFunciones)
             print('===== QUADS =====')
-            pp.pprint(Quad)
+            for i in range(len(Quad)):
+                print(i, Quad[i])
             clearEverything()
     except EOFError:
         print(EOFError)

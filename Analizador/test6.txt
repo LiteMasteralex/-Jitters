@@ -12,9 +12,13 @@ principal() {
 
 	y = x;
 
-	mientras(x<y) haz {
+	mientras(x < y & x < z) haz {
 		x = z + 1;
 		z = x;
+	}
+
+	desde x = 0; hasta 8 hacer {
+		y = z - 1;
 	}
 
 	y = x;
