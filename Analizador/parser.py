@@ -16,11 +16,13 @@ Quad = []
 #Memoria
 countTemporales = 0
 countConstantes = 0
+countParams = 0
 
 # Auxiliares
 current_type = 'void'
 current_function = ''
 const_flag = True
+current_params = ''
 
 def clearEverything():
     # Tablas
@@ -382,13 +384,48 @@ def p_expresiones_1(t):
 
 # FUNCION RETORNO
 def p_funcion_retorno(t):
-    '''funcion_retorno : ID LPAREN lista_ids RPAREN
-                        | ID LPAREN RPAREN'''
+    '''funcion_retorno : ID LPAREN lista_exp RPAREN'''
+
+def p_lista_exp(t):
+    '''lista_exp : check_param lista_exp_1
+                    | empty'''
+
+def p_lista_exp_1(t):
+    '''lista_exp_1 : COMMA check_param lista_exp_1
+                    | empty'''
+
+def p_check_param(t):
+    '''check_param : expresiones'''
+    global countParams, current_params
+    exp = OpStack.pop()
+    exp_type = TypeStack.pop()
+    if(current_params[countParams] == exp_type[0]):
+        quad = ['paramettro', exp, '', 'param' + str(countParams)]
+        Quad.append(quad)
+        countParams = countParams + 1
+
 
 # FUNCION VOID
 def p_funcion_void(t):
-    '''funcion_void : ID LPAREN lista_ids RPAREN SEMICOLON
-                        | ID LPAREN RPAREN SEMICOLON'''
+    '''funcion_void : check_function LPAREN lista_exp RPAREN SEMICOLON'''
+    global countParams, current_params
+    if(countParams == len(current_params)):
+        quad = ['GOSUB', t[1], '', '']
+        Quad.append(quad)
+    else:
+        print("Missing params or something like that")
+
+def p_check_function(t):
+    '''check_function : ID'''
+    global countParams, current_params
+    if t[1] in TablaFunciones:
+        quad = ['ERA', t[1], '', '']
+        Quad.append(quad)
+        countParams = 0
+        current_params = TablaFunciones[t[1]]['parametros']
+    else:
+        print("La funcion", t[1], "no existe")
+    t[0] = t[1]
 
 # RETORNO
 def p_retorno(t):
