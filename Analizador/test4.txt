@@ -3,10 +3,10 @@ var int : i, j, k;
   float : pi[5][5];
   char : stop[10];
 
-funcion void voidFunction();
+funcion void voidFunction(int:id, float:margin);
   var int : subI;
   {
-    subI = 50 * 8 / 10 + 35 * 9 - 50;
+    subI = 50 * 8 / 10 + 35 * 9 - 50 + id;
   }
 
 funcion float floatFunction();
@@ -17,8 +17,6 @@ funcion float floatFunction();
 
 principal() {
   j = 10;
-  x = 5.2;
-  msg = 'c';
   #myId = Funcion() + FuncionOtra(x, y, z) + 24;
 
 }

@@ -19,6 +19,7 @@ countConstantes = 0
 
 # Auxiliares
 current_type = 'void'
+current_function = ''
 const_flag = True
 
 def clearEverything():
@@ -46,13 +47,17 @@ def clearEverything():
 
 # PROGRAMA
 def p_programa(t):
-    '''programa : PROGRAMA define_global SEMICOLON variables define_var_global funciones PRINCIPAL LPAREN RPAREN LCORCHETE estatuto RCORCHETE'''
+    '''programa : PROGRAMA define_global SEMICOLON variables define_var_global funciones PRINCIPAL resolve_jump LPAREN RPAREN LCORCHETE estatuto RCORCHETE'''
     t[0] = "COMPILADO" # t[0] es lo que tiene como valor programa
 
 def p_define_global(t):
     '''define_global : ID'''
-    global TablaFunciones
-    TablaFunciones[t[1]] = {'tipo': 'void'}
+    global TablaFunciones, current_function
+    TablaFunciones[t[1]] = {'tipo': 'void', 'num_variables': 0}
+    current_function = t[1]
+    quad = ['Goto', '', '', '____']
+    Quad.append(quad)
+    JumpStack.append(len(Quad) - 1)
 
 def p_define_var_global(t):
     '''define_var_global :'''
@@ -60,28 +65,37 @@ def p_define_var_global(t):
     TablaGlobales = TablaVariables
     TablaVariables = {}
 
+def p_resolve_jump(t):
+    '''resolve_jump :'''
+    jump_idx = JumpStack.pop()
+    Quad[jump_idx][-1] = len(Quad)
+
 # VARIABLES
 def p_variables(t):
     '''variables : VAR tipo COLON lista_ids SEMICOLON variables_1
                 | empty'''
-    global TablaVariables
-    if(t[1] != None):
+    global TablaVariables, TablaFunciones, current_function
+    if(len(t) > 2):
         for var in t[4]:
             if var['name'] not in TablaVariables:
                 TablaVariables[var['name']] = {'tipo': t[2], 'dimension': var['dimension']}
             else:
                 print("La variable ", var['name'], " ya esta definida")
+        TablaFunciones[current_function]['num_variables'] = t[6] + 1
 
 def p_variables_1(t):
     '''variables_1 : tipo COLON lista_ids SEMICOLON variables_1
                     | empty'''
     global TablaVariables
-    if(t[1] != None):
+    if(len(t) > 2):
         for var in t[3]:
             if var['name'] not in TablaVariables:
                 TablaVariables[var['name']] = {'tipo': t[1], 'dimension': var['dimension']}
+                t[0] = t[5] + 1
             else:
                 print("La variable ", var['name'], " ya esta definida")
+    else:
+        t[0] = t[1]
 
 
 # LISTA_IDS
@@ -110,21 +124,37 @@ def p_lista(t):
 
 # FUNCIONES
 def p_funciones(t):
-    '''funciones : FUNCION define_funct LPAREN parametros RPAREN SEMICOLON variables LCORCHETE estatuto RCORCHETE clear_vars funciones
+    '''funciones : FUNCION define_funct LPAREN parametros RPAREN SEMICOLON variables set_start LCORCHETE estatuto RCORCHETE clear_vars funciones
                 | empty'''
 
 def p_define_funct(t):
     '''define_funct : tipo_retorno ID'''
-    global TablaFunciones
+    global TablaFunciones, current_function
     if(t[2] not in TablaFunciones):
-        TablaFunciones[t[2]] = {'tipo': t[1]}
+        TablaFunciones[t[2]] = {'tipo': t[1], 
+                                'parametros': '', 
+                                'num_parametros': 0, 
+                                'num_variables': 0,
+                                'num_temporales': 0,
+                                'start':0}
+        current_function = t[2]
     else:
         print("La funcion ", t[2], " ya esta definida")
 
 def p_clear_vars(t):
     '''clear_vars :'''
-    global TablaVariables
+    global TablaVariables, TablaFunciones, current_function, countTemporales
     TablaVariables = {}
+    quad = ['ENDPROC', '', '', '']
+    Quad.append(quad)
+    TablaFunciones[current_function]['num_temporales'] = countTemporales
+    countTemporales = 0
+
+
+def p_set_start(t):
+    '''set_start :'''
+    global TablaFunciones, current_function
+    TablaFunciones[current_function]['start'] = len(Quad)
 
 # TIPO_RETORNO
 def p_tipo_retorno(t):
@@ -143,11 +173,27 @@ def p_tipo(t):
 
 #PARAMETROS
 def p_parametros(t):
-    '''parametros : tipo COLON ID variables_2
+    '''parametros : def_parameters variables_2
                     | empty'''
+    global TablaFunciones, current_function
+    if(len(t) > 2):
+        TablaFunciones[current_function]['num_parametros'] = t[2] + 1
 def p_variables_2(t):
-    '''variables_2 : COMMA tipo COLON variables_2
+    '''variables_2 : COMMA def_parameters variables_2
                     | empty'''
+    if len(t) > 2:
+        t[0] = t[3] + 1
+    else:
+        t[0] = t[1]
+
+def p_def_parameters(t):
+    '''def_parameters : tipo COLON ID'''
+    global TablaVariables, TablaFunciones, current_function
+    if t[3] in TablaVariables:
+        print("La variable", t[3], 'ya esta definida')
+    else:
+        TablaVariables[t[3]] = {'tipo': t[1]}
+        TablaFunciones[current_function]['parametros'] = TablaFunciones[current_function]['parametros'] + t[1][0]
 
 #ESTATUTO
 def p_estatuto(t):
@@ -485,6 +531,7 @@ def p_var_cte(t):
 # EMPTY
 def p_empty(t):
     '''empty :'''
+    t[0] = 0
     pass
 
 # SACADOS DE EJEMPLO CALC.PY http://www.dabeaz.com/ply/example.html
