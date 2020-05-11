@@ -3,6 +3,7 @@
 # Tablas
 TablaFunciones = {}
 TablaVariables = {}
+TablaGlobales = {}
 
 # Quadruplos
 OpStack = []
@@ -18,14 +19,14 @@ countConstantes = 0
 
 # Auxiliares
 current_type = 'void'
-current_context = 'global'
 const_flag = True
 
 def clearEverything():
     # Tablas
-    global TablaFunciones, TablaVariables
+    global TablaFunciones, TablaVariables, TablaGlobales
     TablaFunciones = {}
     TablaVariables = {}
+    TablaGlobales = {}
 
     # Quadruplos
     OpStack.clear()
@@ -39,29 +40,24 @@ def clearEverything():
     countConstantes = 0
 
     # Auxiliares
-    global current_type, const_flag, current_context
+    global current_type, const_flag
     current_type = 'void'
     const_flag = True
-    current_context = 'global'
 
 # PROGRAMA
 def p_programa(t):
-    '''programa : PROGRAMA ID SEMICOLON define_global variables define_var_global funciones PRINCIPAL LPAREN RPAREN LCORCHETE estatuto RCORCHETE'''
-    global TablaFunciones
+    '''programa : PROGRAMA define_global SEMICOLON variables define_var_global funciones PRINCIPAL LPAREN RPAREN LCORCHETE estatuto RCORCHETE'''
     t[0] = "COMPILADO" # t[0] es lo que tiene como valor programa
-    #TablaFunciones[t[2]] = {'tipo': 'void', 'variables': t[4]} # Se cambio para que esta tabla de variable sean las globales
-    TablaFunciones[t[2]] = TablaFunciones['global']
-    del TablaFunciones['global']
 
 def p_define_global(t):
-    '''define_global :'''
+    '''define_global : ID'''
     global TablaFunciones
-    TablaFunciones['global'] = {'tipo': 'void', 'variables': {}}
+    TablaFunciones[t[1]] = {'tipo': 'void'}
 
 def p_define_var_global(t):
     '''define_var_global :'''
-    global TablaFunciones, TablaVariables
-    TablaFunciones['global']['variables'] = TablaVariables
+    global TablaGlobales, TablaVariables
+    TablaGlobales = TablaVariables
     TablaVariables = {}
 
 # VARIABLES
@@ -114,22 +110,20 @@ def p_lista(t):
 
 # FUNCIONES
 def p_funciones(t):
-    '''funciones : FUNCION define_funct LPAREN parametros RPAREN SEMICOLON variables define_var_funct LCORCHETE estatuto RCORCHETE funciones
+    '''funciones : FUNCION define_funct LPAREN parametros RPAREN SEMICOLON variables LCORCHETE estatuto RCORCHETE clear_vars funciones
                 | empty'''
 
 def p_define_funct(t):
     '''define_funct : tipo_retorno ID'''
-    global TablaFunciones, current_context
+    global TablaFunciones
     if(t[2] not in TablaFunciones):
-        TablaFunciones[t[2]] = {'tipo': t[1], 'variables': {}}
-        current_context = t[2]
+        TablaFunciones[t[2]] = {'tipo': t[1]}
     else:
         print("La funcion ", t[2], " ya esta definida")
 
-def p_define_var_funct(t):
-    '''define_var_funct :'''
-    global TablaFunciones, TablaVariables, current_context
-    TablaFunciones[current_context]['variables'] = TablaVariables
+def p_clear_vars(t):
+    '''clear_vars :'''
+    global TablaVariables
     TablaVariables = {}
 
 # TIPO_RETORNO
@@ -180,10 +174,10 @@ def p_check_id(t):
     '''check_id : identificadores'''
     # Buscar en tablas de variables
     global current_type
-    if t[1]['name'] in TablaFunciones[current_context]['variables']:
-        current_type = TablaFunciones[current_context]['variables'][t[1]['name']]['tipo']
-    elif t[1]['name'] in TablaFunciones['global']['variables']:
-        current_type = TablaFunciones['global']['variables'][t[1]['name']]['tipo']
+    if t[1]['name'] in TablaVariables:
+        current_type = TablaVariables[t[1]['name']]['tipo']
+    elif t[1]['name'] in TablaGlobales:
+        current_type = TablaGlobales[t[1]['name']]['tipo']
     else:
         print("La variable ", t[1]['name'], " no esta definida") 
     t[0] = t[1]
@@ -211,10 +205,10 @@ def p_terminos(t):
     if(t[1] != '('):
         if(const_flag):
             # Buscar en tablas de variables
-            if t[1]['name'] in TablaFunciones[current_context]['variables']:
-                current_type = TablaFunciones[current_context]['variables'][t[1]['name']]['tipo']
-            elif t[1]['name'] in TablaFunciones['global']['variables']:
-                current_type = TablaFunciones['global']['variables'][t[1]['name']]['tipo']
+            if t[1]['name'] in TablaVariables:
+                current_type = TablaVariables[t[1]['name']]['tipo']
+            elif t[1]['name'] in TablaGlobales:
+                current_type = TablaGlobales[t[1]['name']]['tipo']
             else:
                 print("La variable ", t[1]['name'], " no esta definida") 
         const_flag = True
