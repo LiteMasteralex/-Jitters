@@ -4,8 +4,10 @@ Programa myProgram;
 var int : x, y, z;
 
 principal() {
-	
-    escribe(x); # TODO(): nos falta incorporar escribe a los cuadruplos. 
+    y = 9;
+	x = y;
+    
+    escribe(z, " que tal?", y, "la vida", x + 1);
 	
 	mientras(x<y) haz {
 		si(x < y) entonces {

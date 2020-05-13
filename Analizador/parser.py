@@ -264,7 +264,7 @@ def p_terminos(t):
         TypeStack.append(current_type)
 
 
-# ESPECIALES TODO: Ver como se va a estar manejando matrizes (incluye tambien en las otras reglas)
+# ESPECIALES TODO: Ver como se va a estar manejando matrices (incluye tambien en las otras reglas)
 def p_especiales(t):
     '''especiales : terminos
                     | terminos especiales_1'''
@@ -281,7 +281,7 @@ def p_factores(t):
     global countTemporales
     if(len(t) > 2):
         if(OperStack[-1] == '*' or OperStack[-1] == '/'):
-            right_op = OpStack.pop() # TODO: ver si se puede pasar toda esta logica a una funcion para simplificar el codifo
+            right_op = OpStack.pop() # TODO: ver si se puede pasar toda esta logica a una funcion para simplificar el codigo
             right_type = TypeStack.pop()
             left_op = OpStack.pop()
             left_type = TypeStack.pop()
@@ -439,11 +439,28 @@ def p_lectura(t):
 def p_escritura(t):
     '''escritura : ESCRIBE LPAREN escritura_1 RPAREN SEMICOLON'''
 def p_escritura_1(t):
-    '''escritura_1 : STRING escritura_2
-                    | expresiones escritura_2'''
+    '''escritura_1 : imprimir escritura_2'''
+    
 def p_escritura_2(t):
     '''escritura_2 : COMMA escritura_1 
                     | empty'''
+    if(t[1] != ','):
+        quad = ['ESCRITURA', '\n', '', '']
+        Quad.append(quad)
+
+def p_imprimir(t):
+    '''imprimir : STRING
+                  | expresiones'''
+    if(len(OpStack) > 0):
+        exp = OpStack.pop()
+        quad = ['ESCRITURA', exp , '', '']
+        Quad.append(quad)
+    else:
+        quad = ['ESCRITURA', t[1] , '', '']
+        Quad.append(quad)
+    
+    
+    
 
 # DECISION
 def p_decision(t):
