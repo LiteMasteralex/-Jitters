@@ -213,29 +213,35 @@ def p_estatuto_1(t):
 #ASIGNACION
 def p_asignacion(t):
     '''asignacion : check_id ASIGNAR expresiones SEMICOLON'''
-    # TODO: Verificar que existan los operadores y que la semantica se pueda
-    quad = [t[2], t[1]['name'], OpStack.pop()]
-    Quad.append(quad)
-    t[0] = t[1]['name']
+    right_op = OpStack.pop()
+    right_type = TypeStack.pop()
+    left_op = OpStack.pop()
+    left_type = TypeStack.pop()
+    res_type = Semantica[right_type][left_type]['=']
+    if(res_type != 'err'):
+        quad = ['=', left_op, right_op, '   ']
+        Quad.append(quad)
+    t[0] = t[1]
 
 def p_check_id(t):
     '''check_id : identificadores'''
     # Buscar en tablas de variables
-    global current_type
+    current_type = ''
     if t[1]['name'] in TablaVariables:
         current_type = TablaVariables[t[1]['name']]['tipo']
     elif t[1]['name'] in TablaGlobales:
         current_type = TablaGlobales[t[1]['name']]['tipo']
     else:
-        print("La variable ", t[1]['name'], " no esta definida") 
-    t[0] = t[1]
+        print("La variable ", t[1]['name'], " no esta definida")
+    OpStack.append(t[1]['name'])
+    TypeStack.append(current_type)
+    t[0] = t[1]['name']
 
 # IDENTIFICADORES
 def p_identificadores(t):
     '''identificadores : ID LBRACKET CTEI RBRACKET LBRACKET CTEI RBRACKET
                         | ID LBRACKET CTEI RBRACKET
                         | ID '''
-    global current_type
     dimension = 0
     if(len(t) > 2):
         dimension = 1
