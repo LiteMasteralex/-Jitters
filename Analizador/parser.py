@@ -21,8 +21,9 @@ countParams = 0
 # Auxiliares
 current_type = 'void'
 current_function = ''
-const_flag = True
 current_params = ''
+const_flag = True
+has_return = False
 
 def clearEverything():
     # Tablas
@@ -145,12 +146,16 @@ def p_define_funct(t):
 
 def p_clear_vars(t):
     '''clear_vars :'''
-    global TablaVariables, TablaFunciones, current_function, countTemporales
+    global TablaVariables, TablaFunciones, current_function, countTemporales, has_return
     TablaVariables = {}
     quad = ['ENDPROC', '', '', '']
     Quad.append(quad)
     TablaFunciones[current_function]['num_temporales'] = countTemporales
     countTemporales = 0
+    func_type = TablaFunciones[current_function]['tipo']
+    if(not has_return and func_type != 'void'):
+        print("La funcion", current_function, "espera un valor de retorno de tipo", func_type, "pero ninguno fue recibido")
+    has_return = False
 
 
 def p_set_start(t):
@@ -398,7 +403,7 @@ def p_funcion_retorno(t):
         TablaVariables[t[1]] = {'tipo': TablaFunciones[t[1]]['tipo'], 'dimensiones': 0}
         t[0] = {'name': t[1]}
     else:
-        print("Missing params or something like that")
+        print("La funcion", t[1], "espera", len(current_params), "parametros, pero recibio", countParams)
 
 def p_lista_exp(t):
     '''lista_exp : check_param lista_exp_1
@@ -417,6 +422,8 @@ def p_check_param(t):
         quad = ['parametro', exp, '', 'param' + str(countParams)]
         Quad.append(quad)
         countParams = countParams + 1
+    else:
+        print("Se esperaba un parametro de tipo", current_params[countParams], "pero se recibio un tipo", exp_type)
 
 
 # FUNCION VOID
@@ -427,7 +434,7 @@ def p_funcion_void(t):
         quad = ['GOSUB', t[1], '', '']
         Quad.append(quad)
     else:
-        print("Missing params or something like that")
+        print("La funcion", t[1], "espera", len(current_params), "parametros, pero recibio", countParams)
 
 def p_check_function(t):
     '''check_function : ID'''
@@ -444,6 +451,20 @@ def p_check_function(t):
 # RETORNO
 def p_retorno(t):
     '''retorno : REGRESA LPAREN expresiones RPAREN SEMICOLON'''
+    global current_function, has_return
+    op = OpStack.pop()
+    tp = TypeStack.pop()
+    func_type = TablaFunciones[current_function]['tipo']
+    has_return = True
+    if(tp == func_type):
+        quad = ['regresa', '', '', op]
+        Quad.append(quad)
+    else:
+        if(func_type == 'void'):
+            print("La funcion", current_function, "es de tipo", func_type, "y no acepta valores de retorno")
+        else:
+            print("La funcion", current_function, "espera un valor de tipo", func_type, "y el retorno es de tipo", tp)
+
 
 # LECTURA
 def p_lectura(t):
