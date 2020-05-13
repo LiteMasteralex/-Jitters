@@ -19,7 +19,7 @@ principal() {
         }
         y = x;
 	}
-
+    lee(x, y, z);
 	z = x + 1;
 }
 

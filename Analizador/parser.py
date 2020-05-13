@@ -433,7 +433,16 @@ def p_retorno(t):
 
 # LECTURA
 def p_lectura(t):
-    '''lectura : LEE LPAREN lista_ids RPAREN SEMICOLON'''
+    '''lectura : LEE LPAREN lectura_1 RPAREN SEMICOLON'''
+def p_lectura_1(t):
+    '''lectura_1 : expresiones lectura_2'''
+    if(len(OpStack) > 0):
+        exp = OpStack.pop()
+        quad = ['LEE', exp , '', '']
+        Quad.append(quad)
+def p_lectura_2(t):
+    '''lectura_2 : COMMA lectura_1
+                   | empty'''
 
 # ESCRITURA
 def p_escritura(t):
