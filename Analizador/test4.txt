@@ -1,6 +1,6 @@
 Programa myProgram;
 var int : i, j, k;
-  float : pi[5][5];
+  float : pi[5][5], res;
   char : stop[10];
 
 funcion void voidFunction(int:id, float:margin);
@@ -9,7 +9,7 @@ funcion void voidFunction(int:id, float:margin);
     subI = 50 * 8 / 10 + 35 * 9 - 50 + id;
   }
 
-funcion float floatFunction();
+funcion float floatFunction(int:valor);
   var float : subJ;
   {
     i = k * j;
@@ -18,6 +18,7 @@ funcion float floatFunction();
 
 principal() {
   j = 10;
-  #myId = Funcion() + FuncionOtra(x, y, z) + 24;
+  
+  res = floatFunction(5) + 24;
 
 }

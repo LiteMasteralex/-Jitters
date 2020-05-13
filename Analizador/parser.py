@@ -390,7 +390,15 @@ def p_expresiones_1(t):
 
 # FUNCION RETORNO
 def p_funcion_retorno(t):
-    '''funcion_retorno : ID LPAREN lista_exp RPAREN'''
+    '''funcion_retorno : check_function LPAREN lista_exp RPAREN'''
+    global countParams, current_params, TablaVariables, TablaFunciones
+    if(countParams == len(current_params)):
+        quad = ['GOSUB', t[1], '', '']
+        Quad.append(quad)
+        TablaVariables[t[1]] = {'tipo': TablaFunciones[t[1]]['tipo'], 'dimensiones': 0}
+        t[0] = {'name': t[1]}
+    else:
+        print("Missing params or something like that")
 
 def p_lista_exp(t):
     '''lista_exp : check_param lista_exp_1
@@ -406,7 +414,7 @@ def p_check_param(t):
     exp = OpStack.pop()
     exp_type = TypeStack.pop()
     if(current_params[countParams] == exp_type[0]):
-        quad = ['paramettro', exp, '', 'param' + str(countParams)]
+        quad = ['parametro', exp, '', 'param' + str(countParams)]
         Quad.append(quad)
         countParams = countParams + 1
 
