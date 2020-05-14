@@ -77,10 +77,12 @@ def p_resolve_jump(t):
 def p_variables(t):
     '''variables : VAR tipo COLON lista_ids SEMICOLON variables_1
                 | empty'''
-    global TablaVariables, TablaFunciones, current_function
+    global TablaVariables, TablaFunciones, current_function, TablaFunciones
     if(len(t) > 2):
         for var in t[4]:
             if var['name'] not in TablaVariables:
+                if var['name'] in TablaFunciones:
+                    print("No pueden haber variables con nombre de funciones:", var['name'])
                 TablaVariables[var['name']] = {'tipo': t[2], 'dimension': var['dimension']}
             else:
                 print("La variable ", var['name'], " ya esta definida")
@@ -89,10 +91,12 @@ def p_variables(t):
 def p_variables_1(t):
     '''variables_1 : tipo COLON lista_ids SEMICOLON variables_1
                     | empty'''
-    global TablaVariables
+    global TablaVariables, TablaFunciones
     if(len(t) > 2):
         for var in t[3]:
             if var['name'] not in TablaVariables:
+                if var['name'] in TablaFunciones:
+                    print("No pueden haber variables con nombre de funciones:", var['name'])
                 TablaVariables[var['name']] = {'tipo': t[1], 'dimension': var['dimension']}
                 t[0] = t[5] + 1
             else:
@@ -132,8 +136,10 @@ def p_funciones(t):
 
 def p_define_funct(t):
     '''define_funct : tipo_retorno ID'''
-    global TablaFunciones, current_function
+    global TablaFunciones, current_function, TablaGlobales
     if(t[2] not in TablaFunciones):
+        if(t[2] in TablaGlobales):
+            print("No pueden existir funciones con nombres de variables:", t[2])
         TablaFunciones[t[2]] = {'tipo': t[1], 
                                 'parametros': '', 
                                 'num_parametros': 0, 
