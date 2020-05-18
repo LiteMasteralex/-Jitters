@@ -409,7 +409,7 @@ def p_funcion_retorno(t):
         TablaVariables[t[1]] = {'tipo': TablaFunciones[t[1]]['tipo'], 'dimensiones': 0}
         t[0] = {'name': t[1]}
     else:
-        print("La funcion", t[1], "espera", len(current_params), "parametros, pero recibio", countParams)
+        raise ParserError("La funcion", t[1], "espera", len(current_params), "parametros, pero recibio", countParams)
 
 def p_lista_exp(t):
     '''lista_exp : check_param lista_exp_1
@@ -440,7 +440,7 @@ def p_funcion_void(t):
         quad = ['GOSUB', t[1], '', '']
         Quad.append(quad)
     else:
-        print("La funcion", t[1], "espera", len(current_params), "parametros, pero recibio", countParams)
+        raise ParserError("La funcion", t[1], "espera", len(current_params), "parametros, pero recibio", countParams)
 
 def p_check_function(t):
     '''check_function : ID'''
@@ -868,6 +868,8 @@ Semantica = {
         }
     }
 }
+
+class ParserError(Exception): pass
 
 
 import sys
