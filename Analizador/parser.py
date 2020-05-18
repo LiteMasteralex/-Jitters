@@ -83,11 +83,11 @@ def p_variables(t):
             if var['name'] not in TablaVariables:
                 if var['name'] in TablaFunciones:
                     print("No pueden haber variables con nombre de funciones:", var['name'])
-                    raise Exception
+                    raise ParserError()
                 TablaVariables[var['name']] = {'tipo': t[2], 'dimension': var['dimension']}
             else:
                 print("La variable ", var['name'], " ya esta definida")
-                raise Exception
+                raise ParserError()
         TablaFunciones[current_function]['num_variables'] = t[6] + 1
 
 def p_variables_1(t):
@@ -99,12 +99,12 @@ def p_variables_1(t):
             if var['name'] not in TablaVariables:
                 if var['name'] in TablaFunciones:
                     print("No pueden haber variables con nombre de funciones:", var['name'])
-                    raise Exception
+                    raise ParserError()
                 TablaVariables[var['name']] = {'tipo': t[1], 'dimension': var['dimension']}
                 t[0] = t[5] + 1
             else:
                 print("La variable ", var['name'], " ya esta definida")
-                raise Exception
+                raise ParserError()
     else:
         t[0] = t[1]
 
@@ -144,7 +144,7 @@ def p_define_funct(t):
     if(t[2] not in TablaFunciones):
         if(t[2] in TablaGlobales):
             print("No pueden existir funciones con nombres de variables:", t[2])
-            raise Exception
+            raise ParserError()
         TablaFunciones[t[2]] = {'tipo': t[1], 
                                 'parametros': '', 
                                 'num_parametros': 0, 
@@ -154,7 +154,7 @@ def p_define_funct(t):
         current_function = t[2]
     else:
         print("La funcion ", t[2], " ya esta definida")
-        raise Exception
+        raise ParserError()
 
 def p_clear_vars(t):
     '''clear_vars :'''
@@ -167,7 +167,7 @@ def p_clear_vars(t):
     func_type = TablaFunciones[current_function]['tipo']
     if(not has_return and func_type != 'void'):
         print("La funcion", current_function, "espera un valor de retorno de tipo", func_type, "pero ninguno fue recibido")
-        raise Exception
+        raise ParserError()
     has_return = False
 
 
@@ -211,7 +211,7 @@ def p_def_parameters(t):
     global TablaVariables, TablaFunciones, current_function
     if t[3] in TablaVariables:
         print("La variable", t[3], 'ya esta definida')
-        raise Exception
+        raise ParserError()
     else:
         TablaVariables[t[3]] = {'tipo': t[1]}
         TablaFunciones[current_function]['parametros'] = TablaFunciones[current_function]['parametros'] + t[1][0]
@@ -252,7 +252,7 @@ def p_check_id(t):
         current_type = TablaGlobales[t[1]['name']]['tipo']
     else:
         print("La variable ", t[1]['name'], " no esta definida")
-        raise Exception
+        raise ParserError()
     OpStack.append(t[1]['name'])
     TypeStack.append(current_type)
     t[0] = t[1]['name']
@@ -285,7 +285,7 @@ def p_terminos(t):
                 current_type = TablaGlobales[t[1]['name']]['tipo']
             else:
                 print("La variable ", t[1]['name'], " no esta definida") 
-                raise Exception
+                raise ParserError()
         const_flag = True
         OpStack.append(t[1]['name'])
         TypeStack.append(current_type)
@@ -316,7 +316,7 @@ def p_factores(t):
             res_type = Semantica[right_type][left_type][oper]
             if(res_type == 'err'):
                 print("Error de semantica!!!! ", right_type, left_type, oper)
-                raise Exception
+                raise ParserError()
             result = 'temp' + str(countTemporales)
             countTemporales = countTemporales + 1
             quad = [oper, left_op, right_op, result]
@@ -345,7 +345,7 @@ def p_aritmeticos(t):
             res_type = Semantica[right_type][left_type][oper]
             if(res_type == 'err'):
                 print("Error de semantica!!!!", right_type, left_type, oper)
-                raise Exception
+                raise ParserError()
             result = 'temp' + str(countTemporales)
             countTemporales = countTemporales + 1
             quad = [oper, left_op, right_op, result]
@@ -372,7 +372,7 @@ def p_logicos(t):
             res_type = Semantica[right_type][left_type][oper]
             if(res_type == 'err'):
                 print("Error de semantica!!!!", right_type, left_type, oper)
-                raise Exception
+                raise ParserError()
             result = 'temp' + str(countTemporales)
             countTemporales = countTemporales + 1
             quad = [oper, left_op, right_op, result]
@@ -401,7 +401,7 @@ def p_expresiones(t):
             res_type = Semantica[right_type][left_type][oper]
             if(res_type == 'err'):
                 print("Error de semantica!!!!", right_type, left_type, oper)
-                raise Exception
+                raise ParserError()
             result = 'temp' + str(countTemporales)
             countTemporales = countTemporales + 1
             quad = [oper, left_op, right_op, result]
@@ -424,7 +424,7 @@ def p_funcion_retorno(t):
         t[0] = {'name': t[1]}
     else:
         print("La funcion", t[1], "espera", len(current_params), "parametros, pero recibio", countParams)
-        raise Exception
+        raise ParserError()
 
 def p_lista_exp(t):
     '''lista_exp : check_param lista_exp_1
@@ -445,7 +445,7 @@ def p_check_param(t):
         countParams = countParams + 1
     else:
         print("Se esperaba un parametro de tipo", current_params[countParams], "pero se recibio un tipo", exp_type)
-        raise Exception
+        raise ParserError()
 
 
 # FUNCION VOID
@@ -457,7 +457,7 @@ def p_funcion_void(t):
         Quad.append(quad)
     else:
         print("La funcion", t[1], "espera", len(current_params), "parametros, pero recibio", countParams)
-        raise Exception
+        raise ParserError()
 
 def p_check_function(t):
     '''check_function : ID'''
@@ -469,7 +469,7 @@ def p_check_function(t):
         current_params = TablaFunciones[t[1]]['parametros']
     else:
         print("La funcion", t[1], "no existe")
-        raise Exception
+        raise ParserError()
     t[0] = t[1]
 
 # RETORNO
@@ -486,10 +486,10 @@ def p_retorno(t):
     else:
         if(func_type == 'void'):
             print("La funcion", current_function, "es de tipo", func_type, "y no acepta valores de retorno")
-            raise Exception
+            raise ParserError()
         else:
             print("La funcion", current_function, "espera un valor de tipo", func_type, "y el retorno es de tipo", tp)
-            raise Exception
+            raise ParserError()
 
 
 # LECTURA
@@ -546,7 +546,7 @@ def p_if_jump(t):
     exp_type = TypeStack.pop()
     if(exp_type != 'bool'):
         print("Type-mismatch")
-        raise Exception
+        raise ParserError()
     else:
         result = OpStack.pop()
         quad = ['GotoF', result, '', '____']
@@ -596,7 +596,7 @@ def p_iter_desde(t):
     res_type = Semantica[right_type][left_type][oper]
     if(res_type == 'err'):
         print("Error de semantica!!!!", right_type, left_type, oper)
-        raise Exception
+        raise ParserError()
     result = 'temp' + str(countTemporales)
     countTemporales = countTemporales + 1
     quad = [oper, left_op, right_op, result]
@@ -619,7 +619,7 @@ def p_comparacion_desde(t):
     res_type = Semantica[right_type][left_type][oper]
     if(res_type == 'err'):
         print("Error de semantica!!!!", right_type, left_type, oper)
-        raise Exception
+        raise ParserError()
     result = 'temp' + str(countTemporales)
     countTemporales = countTemporales + 1
     jump_idx = JumpStack.pop()
@@ -892,6 +892,7 @@ Semantica = {
     }
 }
 
+class ParserError(Exception): pass
 
 import sys
 import pprint
@@ -913,7 +914,7 @@ while True:
         f.close()
         try:
             result = parser.parse(data)
-        except:
+        except ParserError:
             result = "err"
         if result == "COMPILADO":
             print("Se compilo exitosamente.")
