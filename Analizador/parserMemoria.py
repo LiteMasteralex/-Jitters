@@ -22,7 +22,6 @@ countParams = 0
 current_type = 'void'
 current_function = ''
 current_params = ''
-const_flag = True
 has_return = False
 is_global = True
 
@@ -77,9 +76,8 @@ def clearEverything():
     countConstantes = 0
 
     # Auxiliares
-    global current_type, const_flag
+    global current_type
     current_type = 'void'
-    const_flag = True
 
 def asignarMemoria(contexto, tipo):
     global Memoria, LimiteMemoria
@@ -199,7 +197,6 @@ def p_lista(t):
     else:
         lst = []
         t[0] = lst
-        #print(t[0])
 
 # FUNCIONES
 def p_funciones(t):
@@ -358,7 +355,6 @@ def p_ident_terminos(t):
     else:
         print("La variable ", t[1]['name'], " no esta definida") 
         raise ParserError()
-    print(t[1]['name'])
     OpStack.append(variable['loc'])
     TypeStack.append(variable['tipo'])
 
@@ -601,7 +597,7 @@ def p_repeticion_no_cond(t):
 
 def p_iter_desde(t):
     '''iter_desde : asignacion'''
-    global countTemporales
+    global countTemporales #TODO: Cambiar para que use direcciones de memoria
     quad = ['Goto', '', '', '____']
     Quad.append(quad)
     JumpStack.append(len(Quad) - 1)
@@ -661,7 +657,7 @@ def p_var_cte(t):
     '''var_cte : CTECH
                | CTEI
                | CTEF'''
-    global const_flag, current_type #TODO: Ver como se va a terminar haciendo, como esta actualmente es un patch para que funcione con lo que tenemos
+    global current_type #TODO: Ver si el current_type se utiliza en otro lado o es solo global
     if(isinstance(t[1], int)):
         current_type = 'int'
     elif(isinstance(t[1], str)):
@@ -672,7 +668,6 @@ def p_var_cte(t):
     loc = asignarMemoria('CTE', current_type)
     OpStack.append(loc)
     TypeStack.append(current_type)
-    const_flag = False
 
 # EMPTY
 def p_empty(t):
