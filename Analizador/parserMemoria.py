@@ -79,23 +79,27 @@ def clearEverything():
     global current_type
     current_type = 'void'
 
-def asignarMemoria(contexto, tipo):
+def asignarMemoria(contexto, tipo, dimension):
     global Memoria, LimiteMemoria
     ubicacion = Memoria[contexto][tipo]
-    Memoria[contexto][tipo] = ubicacion + 1
+    size = 1
+    while(dimension != None):
+        size = size * dimension['sup']
+        dimension = dimension['nxt']
+    Memoria[contexto][tipo] = ubicacion + size
     if(ubicacion >= LimiteMemoria[contexto][tipo]):
         print("ran out of memory") #TODO: definir bein el error
         raise ParserError()
-    return ubicacion
+    return ubicacion, size
 
 def defineVariable(nombre, dimension):
     global is_global, current_type
     if(is_global):
-        memoria = asignarMemoria('Global', current_type)
-        return {'name': nombre, 'loc': memoria, 'dimension': dimension}
+        memoria, size = asignarMemoria('Global', current_type, dimension)
+        return {'name': nombre, 'loc': memoria, 'dimension': dimension, 'size': size}
     else:
-        memoria = asignarMemoria('Local', current_type)
-        return {'name': nombre, 'loc': memoria, 'dimension': dimension}
+        memoria, size = asignarMemoria('Local', current_type, dimension)
+        return {'name': nombre, 'loc': memoria, 'dimension': dimension, 'size': size}
 
 
 def cuadruplosOperaciones():
@@ -121,7 +125,7 @@ def p_programa(t):
 def p_define_global(t):
     '''define_global : ID'''
     global TablaFunciones, current_function
-    TablaFunciones[t[1]] = {'tipo': 'void', 'num_variables': 0}
+    TablaFunciones[t[1]] = {'tipo': 'void', 'memory_size': 0}
     current_function = t[1]
     quad = ['Goto', '', '', '____']
     Quad.append(quad)
@@ -145,34 +149,38 @@ def p_variables(t):
                 | empty'''
     global TablaVariables, TablaFunciones, current_function, TablaFunciones
     if(len(t) > 2):
+        size = t[6]
         for var in t[4]:
             if var['name'] not in TablaVariables:
                 if var['name'] in TablaFunciones:
                     print("No pueden haber variables con nombre de funciones:", var['name'])
                     raise ParserError()
                 TablaVariables[var['name']] = {'tipo': t[2], 'dimension': var['dimension'], 'loc': var['loc']}
+                size = size + var['size']
             else:
                 print("La variable ", var['name'], " ya esta definida")
                 raise ParserError()
-        TablaFunciones[current_function]['num_variables'] = t[6] + 1
+    TablaFunciones[current_function]['memory_size'] = size
 
 def p_variables_1(t):
     '''variables_1 : tipo COLON lista_ids SEMICOLON variables_1
                     | empty'''
     global TablaVariables, TablaFunciones
     if(len(t) > 2):
+        size = t[5]
         for var in t[3]:
             if var['name'] not in TablaVariables:
                 if var['name'] in TablaFunciones:
                     print("No pueden haber variables con nombre de funciones:", var['name'])
                     raise ParserError()
                 TablaVariables[var['name']] = {'tipo': t[1], 'dimension': var['dimension'], 'loc': var['loc']}
-                t[0] = t[5] + 1
+                size = size + var['size']
             else:
                 print("La variable ", var['name'], " ya esta definida")
                 raise ParserError()
     else:
-        t[0] = t[1]
+        size = t[1]
+    t[0] = size
 
 
 # LISTA_IDS
@@ -213,7 +221,7 @@ def p_define_funct(t):
         TablaFunciones[t[2]] = {'tipo': t[1], 
                                 'parametros': '', 
                                 'num_parametros': 0, 
-                                'num_variables': 0,
+                                'memory_size': 0,
                                 'num_temporales': 0,
                                 'start':0}
         current_function = t[2]
@@ -331,11 +339,29 @@ def p_identificadores(t):
     '''identificadores : ID LBRACKET CTEI RBRACKET LBRACKET CTEI RBRACKET
                         | ID LBRACKET CTEI RBRACKET
                         | ID '''
-    dimension = 0
+    dimension = None
     if(len(t) > 2):
-        dimension = 1
+        if(t[3] < 0):
+            print("Las variables dimensionadas no pueden utilizar indices negativos")
+            raise ParserError()
+        dimension = {
+            'inf': 0,
+            'sup': t[3],
+            'nxt': None
+        }
     if(len(t) > 5):
-        dimension = 2
+        if(t[3] < 0 or t[6] < 0):
+            print("Las variables dimensionadas no pueden utilizar indices negativos")
+            raise ParserError()
+        dimension = {
+            'inf': 0,
+            'sup': t[3],
+            'nxt': {
+                'inf': 0,
+                'sup': t[6],
+                'nxt': None
+            }
+        }
     t[0] = {'name':t[1], 'dimension': dimension} 
 
 # TERMINOS

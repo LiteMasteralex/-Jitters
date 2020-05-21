@@ -1,7 +1,7 @@
 Programa myProgram;
-var int : i, j, k;
-  float : pi[5][5];
-  char : stop[10];
+var int : i, j[5], k;
+  float : pi[5][5], msg;
+  char : stop[10], go[5];
 
 principal() {
 
