@@ -4,5 +4,5 @@ var int : i, j[5], k;
   char : stop[10], go[5];
 
 principal() {
-
+	pi[j[1]][5] = j[0];
 }

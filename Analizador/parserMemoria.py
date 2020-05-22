@@ -12,6 +12,9 @@ TypeStack = []
 JumpStack = []
 ForStack = []
 Quad = []
+DimenIdentStack = []
+DimensionStack = []
+DimensionNumStack = []
 
 #Memoria
 countTemporales = 0
@@ -96,10 +99,10 @@ def defineVariable(nombre, dimension):
     global is_global, current_type
     if(is_global):
         memoria, size = asignarMemoria('Global', current_type, dimension)
-        return {'name': nombre, 'loc': memoria, 'dimension': dimension, 'size': size}
+        return {'name': nombre, 'loc': memoria, 'nxt': dimension, 'size': size}
     else:
         memoria, size = asignarMemoria('Local', current_type, dimension)
-        return {'name': nombre, 'loc': memoria, 'dimension': dimension, 'size': size}
+        return {'name': nombre, 'loc': memoria, 'nxt': dimension, 'size': size}
 
 
 def cuadruplosOperaciones():
@@ -155,7 +158,7 @@ def p_variables(t):
                 if var['name'] in TablaFunciones:
                     print("No pueden haber variables con nombre de funciones:", var['name'])
                     raise ParserError()
-                TablaVariables[var['name']] = {'tipo': t[2], 'dimension': var['dimension'], 'loc': var['loc']}
+                TablaVariables[var['name']] = {'tipo': t[2], 'nxt': var['nxt'], 'loc': var['loc']}
                 size = size + var['size']
             else:
                 print("La variable ", var['name'], " ya esta definida")
@@ -173,7 +176,7 @@ def p_variables_1(t):
                 if var['name'] in TablaFunciones:
                     print("No pueden haber variables con nombre de funciones:", var['name'])
                     raise ParserError()
-                TablaVariables[var['name']] = {'tipo': t[1], 'dimension': var['dimension'], 'loc': var['loc']}
+                TablaVariables[var['name']] = {'tipo': t[1], 'nxt': var['nxt'], 'loc': var['loc']}
                 size = size + var['size']
             else:
                 print("La variable ", var['name'], " ya esta definida")
@@ -188,7 +191,7 @@ def p_lista_ids(t):
     '''lista_ids : identificadores lista'''
     #Check if id is in current
     array = t[2]
-    objeto = defineVariable(t[1]['name'], t[1]['dimension'])
+    objeto = defineVariable(t[1]['name'], t[1]['nxt'])
     array.append(objeto)
 
     t[0] = array
@@ -198,7 +201,7 @@ def p_lista(t):
             | empty'''
     if(t[1] == ','):
         array = t[3]
-        objeto = defineVariable(t[2]['name'], t[2]['dimension'])
+        objeto = defineVariable(t[2]['name'], t[2]['nxt'])
         array.append(objeto)
 
         t[0] = array
@@ -291,7 +294,7 @@ def p_def_parameters(t):
         raise ParserError()
     else:
         loc, size = asignarMemoria('Local', t[1], None)
-        TablaVariables[t[3]] = {'loc': loc, 'tipo':t[1], 'dimension': 0}
+        TablaVariables[t[3]] = {'loc': loc, 'tipo':t[1], 'nxt': 0}
         TablaFunciones[current_function]['parametros'] = TablaFunciones[current_function]['parametros'] + t[1][0]
 
 #ESTATUTO
@@ -309,31 +312,34 @@ def p_estatuto_1(t):
 
 #ASIGNACION
 def p_asignacion(t):
-    '''asignacion : check_id ASIGNAR expresiones SEMICOLON'''
+    '''asignacion : ident_exp ASIGNAR expresiones SEMICOLON'''
     right_op = OpStack.pop()
     right_type = TypeStack.pop()
     left_op = OpStack.pop()
     left_type = TypeStack.pop()
     res_type = Semantica[right_type][left_type]['=']
     if(res_type != 'err'):
-        quad = ['=', left_op, right_op, '   ']
+        quad = ['=', left_op, right_op, '']
         Quad.append(quad)
     t[0] = t[1]
 
 def p_check_id(t):
-    '''check_id : identificadores'''
+    '''check_id : ID'''
     # Buscar en tablas de variables
     variable = ''
-    if t[1]['name'] in TablaVariables:
-        variable = TablaVariables[t[1]['name']]
-    elif t[1]['name'] in TablaGlobales:
-        variable = TablaGlobales[t[1]['name']]
+    if t[1] in TablaVariables:
+        variable = TablaVariables[t[1]]
+    elif t[1] in TablaGlobales:
+        variable = TablaGlobales[t[1]]
     else:
-        print("La variable ", t[1]['name'], " no esta definida")
+        print("La variable ", t[1], " no esta definida")
         raise ParserError()
     OpStack.append(variable['loc'])
     TypeStack.append(variable['tipo'])
-    t[0] = variable['loc']
+    DimenIdentStack.append(t[1])
+    DimensionStack.append(variable['nxt'])
+    DimensionNumStack.append(0)
+    t[0] = {'name': t[1], 'loc': variable['loc']}
 
 # IDENTIFICADORES
 def p_identificadores(t):
@@ -363,12 +369,81 @@ def p_identificadores(t):
                 'nxt': None
             }
         }
-    t[0] = {'name':t[1], 'dimension': dimension} 
+    t[0] = {'name':t[1], 'nxt': dimension} 
+
+def p_indent_exp(t):
+    '''ident_exp : matriz
+                    | arreglo
+                    | check_id'''
+    DimensionStack.pop()
+    DimensionNumStack.pop()
+    DimenIdentStack.pop()
+    t[0] = t[1]['loc']
+
+def p_matriz(t):
+    '''matriz : check_id check_dim LBRACKET expresiones index_dim RBRACKET check_dim LBRACKET expresiones index_dim RBRACKET'''
+    aux = OpStack.pop()
+    quad = ['+Addr', aux, '', '(Temp_Direc)']
+    Quad.append(quad)
+    OpStack.append('(Temp_Direc)')
+    t[0] = t[1]
+
+
+def p_arreglo(t):
+    '''arreglo : check_id check_dim LBRACKET expresiones index_dim RBRACKET'''
+    name = DimenIdentStack[-1]
+    dimension = DimensionStack[-1]
+    num_dim = DimensionNumStack[-1]
+    if(dimension != None):
+        print("La variable", name, "no es de", num_dim, "dimensiones")
+        raise ParserError()
+    aux = OpStack.pop()
+    quad = ['+Addr', aux, '', '(Temp_Direc)']
+    Quad.append(quad)
+    OpStack.append('(Temp_Direc)')
+    t[0] = t[1]
+
+
+
+def p_check_dim(t):
+    '''check_dim :'''
+    name = DimenIdentStack[-1]
+    dimension = DimensionStack[-1]
+    num_dim = DimensionNumStack[-1]
+    if(dimension == None):
+        print("La variable", name, "es de", num_dim, "dimensiones")
+        raise ParserError()
+
+
+def p_index_dim(t):
+    '''index_dim :'''
+    global DimensionStack, DimensionNumStack
+    dimension = DimensionStack[-1]
+    num_dim = DimensionNumStack[-1]
+    if(TypeStack[-1] != 'int'):
+        print("Las variables dimensionadas solo pueden ser indexadas con valores de tipo int")
+        raise ParserError()
+    quad = ['verify', OpStack[-1], dimension['inf'], dimension['sup']]
+    if(dimension['nxt'] != None):
+        left_op = OpStack.pop()
+        result, size = asignarMemoria('Temporal', 'int', None)
+        quad = ['*', left_op, dimension['sup'], result]
+        Quad.append(quad)
+        OpStack.append(result)
+    else:
+        aux2, aux1 = OpStack.pop(), OpStack.pop()
+        result, size = asignarMemoria('Temporal', 'int', None)
+        quad = ['+', aux1, aux2, result]
+        Quad.append(quad)
+        OpStack.append(result)
+    DimensionStack[-1] = dimension['nxt']
+    DimensionNumStack[-1] = num_dim + 1
+
 
 # TERMINOS
 def p_terminos(t):
     '''terminos : LPAREN expresiones RPAREN 
-                | check_id
+                | ident_exp
                 | var_cte 
                 | funcion_retorno'''
 
@@ -693,6 +768,7 @@ def p_empty(t):
 
 def p_error(t):
     print("Syntax error at '%s'" % t.value)
+    raise ParserError()
 
 
 # Definicion de Cubo Semantico
