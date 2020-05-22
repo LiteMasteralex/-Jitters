@@ -112,7 +112,7 @@ def cuadruplosOperaciones():
     if(res_type == 'err'):
         print("Error de semantica!!!! ", right_type, left_type, oper)
         raise ParserError()
-    result = asignarMemoria('Temporal', res_type)
+    result, size = asignarMemoria('Temporal', res_type, None)
     quad = [oper, left_op, right_op, result]
     Quad.append(quad)
     OpStack.append(result)
@@ -160,7 +160,7 @@ def p_variables(t):
             else:
                 print("La variable ", var['name'], " ya esta definida")
                 raise ParserError()
-    TablaFunciones[current_function]['memory_size'] = size
+    TablaFunciones[current_function]['memory_size'] = TablaFunciones[current_function]['memory_size'] + size
 
 def p_variables_1(t):
     '''variables_1 : tipo COLON lista_ids SEMICOLON variables_1
@@ -274,6 +274,7 @@ def p_parametros(t):
     global TablaFunciones, current_function
     if(len(t) > 2):
         TablaFunciones[current_function]['num_parametros'] = t[2] + 1
+        TablaFunciones[current_function]['memory_size'] = TablaFunciones[current_function]['memory_size'] + t[2] + 1
 def p_variables_2(t):
     '''variables_2 : COMMA def_parameters variables_2
                     | empty'''
@@ -289,7 +290,7 @@ def p_def_parameters(t):
         print("La variable", t[3], 'ya esta definida')
         raise ParserError()
     else:
-        loc = asignarMemoria('Local', t[1])
+        loc, size = asignarMemoria('Local', t[1], None)
         TablaVariables[t[3]] = {'loc': loc, 'tipo':t[1], 'dimension': 0}
         TablaFunciones[current_function]['parametros'] = TablaFunciones[current_function]['parametros'] + t[1][0]
 
@@ -457,7 +458,7 @@ def p_funcion_retorno(t):
         quad = ['GOSUB', t[1], '', '']
         Quad.append(quad)
         tipo = TablaFunciones[t[1]]['tipo']
-        loc = asignarMemoria('Local', tipo)
+        loc, size = asignarMemoria('Local', tipo, None)
         TablaVariables[t[1]] = {'loc': loc, 'tipo': tipo, 'dimensiones': 0}
         OpStack.append(loc)
         TypeStack.append(tipo)
@@ -691,7 +692,7 @@ def p_var_cte(t):
     elif(isinstance(t[1], float)):
         current_type = 'float'
 
-    loc = asignarMemoria('CTE', current_type)
+    loc, size = asignarMemoria('CTE', current_type, None)
     OpStack.append(loc)
     TypeStack.append(current_type)
 
