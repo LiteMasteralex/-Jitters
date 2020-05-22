@@ -368,22 +368,9 @@ def p_identificadores(t):
 # TERMINOS
 def p_terminos(t):
     '''terminos : LPAREN expresiones RPAREN 
-                | ident_terminos
+                | check_id
                 | var_cte 
                 | funcion_retorno'''
-
-def p_ident_terminos(t):
-    '''ident_terminos : identificadores'''
-    variable = ''
-    if t[1]['name'] in TablaVariables:
-        variable = TablaVariables[t[1]['name']]
-    elif t[1]['name'] in TablaGlobales:
-        variable = TablaGlobales[t[1]['name']]
-    else:
-        print("La variable ", t[1]['name'], " no esta definida") 
-        raise ParserError()
-    OpStack.append(variable['loc'])
-    TypeStack.append(variable['tipo'])
 
 
 # ESPECIALES TODO: Ver como se va a estar manejando matrices (incluye tambien en las otras reglas)
