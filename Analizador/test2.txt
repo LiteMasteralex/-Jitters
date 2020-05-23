@@ -13,33 +13,32 @@ funcion void voidFunction();
       x = y;
     }
     sino {
-      function();
+      voidFunction();
     }
 
     mientras((X < 10) | (Y > z)) haz {
       y = 10;
     }
 
-    desde x=0; hasta Y | Z hacer {
+    desde x=0; hasta Y hacer {
       j = 8;
     }
   }
 
-  funcion float floatFunction();
+funcion float floatFunction();
   {
-    id();
-    regresa(5);
+    voidFunction();
+    regresa(5.0);
   }
 
 
 
 principal() {
   j = 10;
-  x = 5.2;
-  msg = 'c';  
-  myId = Funcion() + FuncionOtra(x, y, z) + 24;
-  last = (10 * 5) / 8;
+  pi[0][1] = 5.2;
+  stop[5] = 'c';  
+  k = floatFunction() + 24;
 
-  lee(x, y, z);
-  escribe("Result: ", id);
+  lee(i, j, k);
+  escribe("Result: ", j);
 }
