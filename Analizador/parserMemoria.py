@@ -17,7 +17,6 @@ DimensionStack = []
 DimensionNumStack = []
 
 #Memoria
-countTemporales = 0
 countConstantes = 0
 countParams = 0
 
@@ -31,25 +30,19 @@ is_global = True
 def clearLocales():
     global Memoria
     Memoria['Local'] = {
-        'int': 5000,
-        'float': 6000,
-        'char': 7000,
-        'bool': 8000
+        'int': 4000,
+        'float': 5000,
+        'char': 6000
     }
 
     Memoria['Temporal'] = {
-        'int': 9000,
-        'float': 10000,
-        'char': 11000,
-        'bool': 12000
+        'int': 7000,
+        'float': 8000,
+        'char': 9000,
+        'bool': 10000,
+        'addr': 11000
     }
 
-    Memoria['CTE'] = {
-        'int': 13000,
-        'float': 14000,
-        'char': 15000,
-        'bool': 16000
-    }
 
 
 def clearEverything():
@@ -74,8 +67,7 @@ def clearEverything():
 
     clearLocales()
 
-    global countTemporales, countConstantes
-    countTemporales = 0
+    global countConstantes
     countConstantes = 0
 
     # Auxiliares
@@ -104,6 +96,16 @@ def defineVariable(nombre, dimension):
         memoria, size = asignarMemoria('Local', current_type, dimension)
         return {'name': nombre, 'loc': memoria, 'nxt': dimension, 'size': size}
 
+def obtenVariable(nombre):
+    variable = ''
+    if nombre in TablaVariables:
+        variable = TablaVariables[nombre]
+    elif nombre in TablaGlobales:
+        variable = TablaGlobales[nombre]
+    else:
+        print("La variable ", nombre, " no esta definida")
+        raise ParserError()
+    return variable
 
 def cuadruplosOperaciones():
     right_op = OpStack.pop()
@@ -163,7 +165,7 @@ def p_variables(t):
             else:
                 print("La variable ", var['name'], " ya esta definida")
                 raise ParserError()
-    TablaFunciones[current_function]['memory_size'] = TablaFunciones[current_function]['memory_size'] + size
+        TablaFunciones[current_function]['memory_size'] = TablaFunciones[current_function]['memory_size'] + size
 
 def p_variables_1(t):
     '''variables_1 : tipo COLON lista_ids SEMICOLON variables_1
@@ -234,12 +236,10 @@ def p_define_funct(t):
 
 def p_clear_vars(t):
     '''clear_vars :'''
-    global TablaVariables, TablaFunciones, current_function, countTemporales, has_return
+    global TablaVariables, TablaFunciones, current_function, has_return
     TablaVariables = {}
     quad = ['ENDPROC', '', '', '']
     Quad.append(quad)
-    TablaFunciones[current_function]['num_temporales'] = countTemporales
-    countTemporales = 0
     func_type = TablaFunciones[current_function]['tipo']
     if(not has_return and func_type != 'void'):
         print("La funcion", current_function, "espera un valor de retorno de tipo", func_type, "pero ninguno fue recibido")
@@ -326,14 +326,7 @@ def p_asignacion(t):
 def p_check_id(t):
     '''check_id : ID'''
     # Buscar en tablas de variables
-    variable = ''
-    if t[1] in TablaVariables:
-        variable = TablaVariables[t[1]]
-    elif t[1] in TablaGlobales:
-        variable = TablaGlobales[t[1]]
-    else:
-        print("La variable ", t[1], " no esta definida")
-        raise ParserError()
+    variable = obtenVariable(t[1])
     OpStack.append(variable['loc'])
     TypeStack.append(variable['tipo'])
     DimenIdentStack.append(t[1])
@@ -382,10 +375,13 @@ def p_indent_exp(t):
 
 def p_matriz(t):
     '''matriz : check_id check_dim LBRACKET expresiones index_dim RBRACKET check_dim LBRACKET expresiones index_dim RBRACKET'''
+    
     aux = OpStack.pop()
-    quad = ['+Addr', aux, '', '(Temp_Direc)']
+    variable = obtenVariable(DimenIdentStack[-1])
+    res, size = asignarMemoria('Temporal', 'addr', None)
+    quad = ['+Addr', aux, variable['loc'], res]
     Quad.append(quad)
-    OpStack.append('(Temp_Direc)')
+    OpStack.append(res)
     t[0] = t[1]
 
 
@@ -394,13 +390,15 @@ def p_arreglo(t):
     name = DimenIdentStack[-1]
     dimension = DimensionStack[-1]
     num_dim = DimensionNumStack[-1]
+    variable = obtenVariable(DimenIdentStack[-1])
+    res, size = asignarMemoria('Temporal', 'addr', None)
     if(dimension != None):
         print("La variable", name, "no es de", num_dim, "dimensiones")
         raise ParserError()
     aux = OpStack.pop()
-    quad = ['+Addr', aux, '', '(Temp_Direc)']
+    quad = ['+Addr', aux, variable['loc'], res]
     Quad.append(quad)
-    OpStack.append('(Temp_Direc)')
+    OpStack.append(res)
     t[0] = t[1]
 
 
@@ -488,7 +486,6 @@ def p_aritmeticos_1(t):
 def p_logicos(t):
     '''logicos : aritmeticos
                     | aritmeticos logicos_1 logicos'''
-    global countTemporales
     if(len(t) > 2):
         if(OperStack[-1] == '<' or OperStack[-1] == '>' or OperStack[-1] == '==' or OperStack[-1] == '!='):
             cuadruplosOperaciones()
@@ -503,7 +500,6 @@ def p_logicos_1(t):
 def p_expresiones(t):
     '''expresiones : logicos
                     | logicos expresiones_1 expresiones'''
-    global countTemporales
     if(len(t) > 2):
         if(OperStack[-1] == '&' or OperStack[-1] == '|'):
             cuadruplosOperaciones()
@@ -686,7 +682,6 @@ def p_repeticion_no_cond(t):
 
 def p_iter_desde(t):
     '''iter_desde : asignacion'''
-    global countTemporales #TODO: Cambiar para que use direcciones de memoria
     quad = ['Goto', '', '', '____']
     Quad.append(quad)
     JumpStack.append(len(Quad) - 1)
@@ -699,8 +694,7 @@ def p_iter_desde(t):
     if(res_type == 'err'):
         print("Error de semantica!!!!", right_type, left_type, oper)
         raise ParserError()
-    result = 'temp' + str(countTemporales)
-    countTemporales = countTemporales + 1
+    result, size = asignarMemoria('Temporal', res_type, None)
     quad = [oper, left_op, right_op, result]
     #Jump
     ForStack.append(len(Quad))
@@ -712,7 +706,6 @@ def p_iter_desde(t):
 
 def p_comparacion_desde(t):
     '''comparacion_desde : expresiones'''
-    global countTemporales
     right_op = OpStack.pop()
     right_type = TypeStack.pop()
     left_op = OpStack.pop()
@@ -722,8 +715,7 @@ def p_comparacion_desde(t):
     if(res_type == 'err'):
         print("Error de semantica!!!!", right_type, left_type, oper)
         raise ParserError()
-    result = 'temp' + str(countTemporales)
-    countTemporales = countTemporales + 1
+    result, size = asignarMemoria('Temporal', res_type, None)
     jump_idx = JumpStack.pop()
     Quad[jump_idx][-1] = len(Quad)
     quad = [oper, left_op, right_op, result]
@@ -794,10 +786,10 @@ Semantica = {
             '-': 'float',
             '*': 'float',
             '/': 'err',
-            '>': 'err', 
-            '<': 'err',
-            '!=': 'err',
-            '==': 'err',
+            '>': 'bool', 
+            '<': 'bool',
+            '!=': 'bool',
+            '==': 'bool',
             '&': 'err',
             '|': 'err',
             '=': 'err'
@@ -1000,26 +992,25 @@ Memoria = {
     'Global': {
         'int': 1000,
         'float': 2000,
-        'char': 3000,
-        'bool': 4000
+        'char': 3000
     },
     'Local': {
-        'int': 5000,
-        'float': 6000,
-        'char': 7000,
-        'bool': 8000
+        'int': 4000,
+        'float': 5000,
+        'char': 6000
     },
     'Temporal': {
-        'int': 9000,
-        'float': 10000,
-        'char': 11000,
-        'bool': 12000
+        'int': 7000,
+        'float': 8000,
+        'char': 9000,
+        'bool': 10000,
+        'addr': 11000
+
     },
     'CTE': {
-        'int': 13000,
-        'float': 14000,
-        'char': 15000,
-        'bool': 16000
+        'int': 12000,
+        'float': 13000,
+        'char': 14000
     }
 }
 
@@ -1027,26 +1018,24 @@ LimiteMemoria = {
     'Global': {
         'int': 2000,
         'float': 3000,
-        'char': 4000,
-        'bool': 5000
+        'char': 4000
     },
     'Local': {
-        'int': 6000,
-        'float': 7000,
-        'char': 8000,
-        'bool': 9000
+        'int': 5000,
+        'float': 6000,
+        'char': 7000
     },
     'Temporal': {
-        'int': 10000,
-        'float': 11000,
-        'char': 12000,
-        'bool': 13000
+        'int': 8000,
+        'float': 9000,
+        'char': 10000,
+        'bool': 11000,
+        'addr': 12000,
     },
     'CTE': {
-        'int': 14000,
-        'float': 15000,
-        'char': 16000,
-        'bool': 17000
+        'int': 13000,
+        'float': 14000,
+        'char': 15000
     }
 }
 
