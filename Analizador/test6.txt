@@ -1,5 +1,6 @@
 Programa myProgram;
 var int : x, y, z;
+	char: f;
 
 principal() {
 	si(x < y) entonces {
@@ -22,4 +23,5 @@ principal() {
 	}
 
 	y = x;
+	f = 'H';
 }
