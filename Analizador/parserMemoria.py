@@ -617,7 +617,7 @@ def p_escritura_2(t):
     '''escritura_2 : COMMA escritura_1 
                     | empty'''
     if(t[1] != ','):
-        quad = ['ESCRITURA', '\n', '', '']
+        quad = ['ESCRITURA', 'ENDLINE', '', '']
         Quad.append(quad)
 
 def p_imprimir(t):
@@ -705,7 +705,7 @@ def p_iter_desde(t):
     #Jump
     ForStack.append(len(Quad))
     Quad.append(quad)
-    quad = ['=', t[1], result]
+    quad = ['=', t[1], result, '']
     Quad.append(quad)
     OpStack.append(t[1])
     TypeStack.append(left_type)
@@ -1076,11 +1076,16 @@ while True:
             result = "err"
         if result == "COMPILADO":
             print("Se compilo exitosamente.")
-            print('===== Funciones =====')
-            pp.pprint(TablaFunciones)
-            print('===== QUADS =====')
+            print('       <Funciones')
+            for program in TablaFunciones:
+                print ('p:' + program)
+                print ('(')
+                for var in TablaFunciones[program]:
+                    print ('    ',var,' : ',TablaFunciones[program][var])
+                print (')')
+            print('       <QUADS')
             for i in range(len(Quad)):
-                print(i, Quad[i])
+                print(i, Quad[i][0],'|', Quad[i][1],'|', Quad[i][2],'|', Quad[i][3])
         clearEverything()
     except EOFError:
         print(EOFError)
