@@ -4,6 +4,7 @@
 TablaFunciones = {}
 TablaVariables = {}
 TablaGlobales = {}
+TablaConstantes = {}
 
 # Quadruplos
 OpStack = []
@@ -317,10 +318,12 @@ def p_asignacion(t):
     right_type = TypeStack.pop()
     left_op = OpStack.pop()
     left_type = TypeStack.pop()
-    res_type = Semantica[right_type][left_type]['=']
-    if(res_type != 'err'):
-        quad = ['=', left_op, right_op, '']
-        Quad.append(quad)
+    res_type = Semantica[left_type][right_type]['=']
+    if(res_type == 'err'):
+        print('Type Missmatch:','La variable no es tipo', right_type)
+        raise ParserError()
+    quad = ['=', left_op, right_op, '']
+    Quad.append(quad)
     t[0] = t[1]
 
 def p_check_id(t):
@@ -444,6 +447,7 @@ def p_terminos(t):
                 | ident_exp
                 | var_cte 
                 | funcion_retorno'''
+
 
 
 # ESPECIALES TODO: Ver como se va a estar manejando matrices (incluye tambien en las otras reglas)
@@ -745,8 +749,12 @@ def p_var_cte(t):
         current_type = 'char'
     elif(isinstance(t[1], float)):
         current_type = 'float'
-
-    loc, size = asignarMemoria('CTE', current_type, None)
+    
+    if(t[1] in TablaConstantes):
+        loc = TablaConstantes[t[1]]['loc']
+    else:
+        loc, size = asignarMemoria('CTE', current_type, None)
+        TablaConstantes[t[1]] = {'loc': loc, 'tipo': current_type}
     OpStack.append(loc)
     TypeStack.append(current_type)
 
@@ -1072,7 +1080,14 @@ while True:
                 for var in TablaFunciones[program]:
                     print ('    ',var,' : ',TablaFunciones[program][var])
                 print (')')
-            print('       <QUADS')
+            print('       <Constantes')
+            for const in TablaConstantes:
+                print ('cons:' + str(const))
+                print ('(')
+                for var in TablaConstantes[const]:
+                    print ('    ',var,' : ',TablaConstantes[const][var])
+                print (')')
+            print('       <Quads')
             for i in range(len(Quad)):
                 print(i, Quad[i][0],'|', Quad[i][1],'|', Quad[i][2],'|', Quad[i][3])
         clearEverything()
