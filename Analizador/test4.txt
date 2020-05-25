@@ -6,7 +6,7 @@ var int : i, j, k;
 funcion void voidFunction(int:id, float:margin);
   var int : subI;
   {
-    subI = 50 * 8 / 10 + 35 * 9 - 50 + id;
+    subI = 50 + 35 * 9 - 50 + id;
   }
 
 funcion float floatFunction(int:valor);
