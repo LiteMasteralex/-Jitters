@@ -35,10 +35,10 @@ funcion float floatFunction();
 
 principal() {
   j = 10;
-  pi[0][1] = 5.2;
+  pi[0][1] = 5.0 + floatFunction();
   stop[5] = 'c';  
-  k = floatFunction() + 24;
-
+  voidFunction();
+  k = 24;
   lee(i, j, k);
   escribe("Result: ", j);
 }
