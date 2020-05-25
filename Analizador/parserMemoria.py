@@ -601,15 +601,20 @@ def p_retorno(t):
 def p_lectura(t):
     '''lectura : LEE LPAREN lectura_1 RPAREN SEMICOLON'''
 def p_lectura_1(t):
-    '''lectura_1 : expresiones lectura_2'''
-    if(len(OpStack) > 0):
+    '''lectura_1 : valor_lectura lectura_2'''
+
+def p_lectura_2(t):
+    '''lectura_2 : COMMA lectura_1
+                   | empty'''
+
+def p_valor_lectura(t):
+    '''valor_lectura : ident_exp 
+                        | empty'''
+    if(t[1] != 0):
         TypeStack.pop()
         exp = OpStack.pop()
         quad = ['LEE', exp , '', '']
         Quad.append(quad)
-def p_lectura_2(t):
-    '''lectura_2 : COMMA lectura_1
-                   | empty'''
 
 # ESCRITURA
 def p_escritura(t):
