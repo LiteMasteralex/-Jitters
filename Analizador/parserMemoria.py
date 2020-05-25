@@ -320,6 +320,7 @@ def p_asignacion(t):
     left_type = TypeStack.pop()
     res_type = Semantica[left_type][right_type]['=']
     if(res_type == 'err'):
+        print('No se le puede asignar un', right_type, 'a un', left_type)
         print('Type Missmatch:','La variable no es tipo', right_type)
         raise ParserError()
     quad = ['=', left_op, right_op, '']
@@ -421,7 +422,8 @@ def p_index_dim(t):
     global DimensionStack, DimensionNumStack
     dimension = DimensionStack[-1]
     num_dim = DimensionNumStack[-1]
-    if(TypeStack[-1] != 'int'):
+    tipo = TypeStack.pop()
+    if(tipo != 'int'):
         print("Las variables dimensionadas solo pueden ser indexadas con valores de tipo int")
         raise ParserError()
     quad = ['verify', OpStack[-1], dimension['inf'], dimension['sup']]
@@ -524,6 +526,7 @@ def p_funcion_retorno(t):
         TablaVariables[t[1]] = {'loc': loc, 'tipo': tipo, 'dimensiones': 0}
         OpStack.append(loc)
         TypeStack.append(tipo)
+        
     else:
         print("La funcion", t[1], "espera", len(current_params), "parametros, pero recibio", countParams)
         raise ParserError()
@@ -600,6 +603,7 @@ def p_lectura(t):
 def p_lectura_1(t):
     '''lectura_1 : expresiones lectura_2'''
     if(len(OpStack) > 0):
+        TypeStack.pop()
         exp = OpStack.pop()
         quad = ['LEE', exp , '', '']
         Quad.append(quad)
@@ -610,6 +614,7 @@ def p_lectura_2(t):
 # ESCRITURA
 def p_escritura(t):
     '''escritura : ESCRIBE LPAREN escritura_1 RPAREN SEMICOLON'''
+    TypeStack.pop()
 def p_escritura_1(t):
     '''escritura_1 : imprimir escritura_2'''
     
