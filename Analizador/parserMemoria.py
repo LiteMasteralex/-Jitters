@@ -723,7 +723,12 @@ def p_iter_desde(t):
     JumpStack.append(len(Quad) - 1)
     left_op = t[1]
     left_type = current_type
-    right_op = 1
+    if(1 in TablaConstantes):
+        loc = TablaConstantes[1]['loc']
+    else:
+        loc, size = asignarMemoria('CTE', current_type, None)
+        TablaConstantes[1] = {'loc': loc, 'tipo': current_type}
+    right_op = loc
     right_type = 'int'
     oper = '+'
     res_type = Semantica[right_type][left_type][oper]
@@ -746,7 +751,7 @@ def p_comparacion_desde(t):
     right_type = TypeStack.pop()
     left_op = OpStack.pop()
     left_type = TypeStack.pop()
-    oper = '<'
+    oper = '>'
     res_type = Semantica[right_type][left_type][oper]
     if(res_type == 'err'):
         print("Error de semantica!!!!", right_type, left_type, oper)

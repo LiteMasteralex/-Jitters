@@ -2,7 +2,9 @@ Programa myProgram;
 var int : i, k;
 
 principal() {
-	lee(k);
-	i = 5 + k;
-	escribe(i);
+	k = 0;
+	desde i = 1; hasta 10 hacer {
+		k = k + 1;
+	}
+	escribe(k);
 }
