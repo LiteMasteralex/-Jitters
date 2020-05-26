@@ -133,7 +133,7 @@ def p_define_global(t):
     global TablaFunciones, current_function
     TablaFunciones[t[1]] = {'tipo': 'void', 'memory_size': 0}
     current_function = t[1]
-    quad = ['Goto', '', '', '____']
+    quad = ['Goto', '_', '_', '____']
     Quad.append(quad)
     JumpStack.append(len(Quad) - 1)
 
@@ -239,7 +239,7 @@ def p_clear_vars(t):
     '''clear_vars :'''
     global TablaVariables, TablaFunciones, current_function, has_return
     TablaVariables = {}
-    quad = ['ENDPROC', '', '', '']
+    quad = ['ENDPROC', '_', '_', '_']
     Quad.append(quad)
     func_type = TablaFunciones[current_function]['tipo']
     if(not has_return and func_type != 'void'):
@@ -323,7 +323,7 @@ def p_asignacion(t):
         print('No se le puede asignar un', right_type, 'a un', left_type)
         print('Type Missmatch:','La variable no es tipo', right_type)
         raise ParserError()
-    quad = ['=', left_op, right_op, '']
+    quad = ['=', left_op, right_op, '_']
     Quad.append(quad)
     t[0] = t[1]
 
@@ -519,7 +519,7 @@ def p_funcion_retorno(t):
     '''funcion_retorno : check_function LPAREN lista_exp RPAREN'''
     global countParams, current_params, TablaVariables, TablaFunciones
     if(countParams == len(current_params)):
-        quad = ['GOSUB', t[1], '', '']
+        quad = ['GOSUB', t[1], '_', '_']
         Quad.append(quad)
         tipo = TablaFunciones[t[1]]['tipo']
         loc, size = asignarMemoria('Local', tipo, None)
@@ -545,7 +545,7 @@ def p_check_param(t):
     exp = OpStack.pop()
     exp_type = TypeStack.pop()
     if(current_params[countParams] == exp_type[0]):
-        quad = ['parametro', exp, '', 'param' + str(countParams)]
+        quad = ['parametro', exp, '_', 'param' + str(countParams)]
         Quad.append(quad)
         countParams = countParams + 1
     else:
@@ -558,7 +558,7 @@ def p_funcion_void(t):
     '''funcion_void : check_function LPAREN lista_exp RPAREN SEMICOLON'''
     global countParams, current_params
     if(countParams == len(current_params)):
-        quad = ['GOSUB', t[1], '', '']
+        quad = ['GOSUB', t[1], '_', '_']
         Quad.append(quad)
     else:
         print("La funcion", t[1], "espera", len(current_params), "parametros, pero recibio", countParams)
@@ -568,7 +568,7 @@ def p_check_function(t):
     '''check_function : ID'''
     global countParams, current_params
     if t[1] in TablaFunciones:
-        quad = ['ERA', t[1], '', '']
+        quad = ['ERA', t[1], '_', '_']
         Quad.append(quad)
         countParams = 0
         current_params = TablaFunciones[t[1]]['parametros']
@@ -586,7 +586,7 @@ def p_retorno(t):
     func_type = TablaFunciones[current_function]['tipo']
     has_return = True
     if(tp == func_type):
-        quad = ['regresa', '', '', op]
+        quad = ['regresa', '_', '_', op]
         Quad.append(quad)
     else:
         if(func_type == 'void'):
@@ -613,7 +613,7 @@ def p_valor_lectura(t):
     if(t[1] != 0):
         TypeStack.pop()
         exp = OpStack.pop()
-        quad = ['LEE', exp , '', '']
+        quad = ['LEE', exp , '_', '_']
         Quad.append(quad)
 
 # ESCRITURA
@@ -627,7 +627,7 @@ def p_escritura_2(t):
     '''escritura_2 : COMMA escritura_1 
                     | empty'''
     if(t[1] != ','):
-        quad = ['ESCRITURA', 'ENDLINE', '', '']
+        quad = ['ESCRITURA', 'ENDLINE', '_', '_']
         Quad.append(quad)
 
 def p_imprimir(t):
@@ -635,10 +635,10 @@ def p_imprimir(t):
                   | expresiones'''
     if(len(OpStack) > 0):
         exp = OpStack.pop()
-        quad = ['ESCRITURA', exp , '', '']
+        quad = ['ESCRITURA', exp , '_', '_']
         Quad.append(quad)
     else:
-        quad = ['ESCRITURA', t[1] , '', '']
+        quad = ['ESCRITURA', t[1] , '_', '_']
         Quad.append(quad)
     
     
@@ -661,14 +661,14 @@ def p_if_jump(t):
         raise ParserError()
     else:
         result = OpStack.pop()
-        quad = ['GotoF', result, '', '____']
+        quad = ['GotoF', result, '_', '____']
         Quad.append(quad)
         JumpStack.append(len(Quad) - 1)
 
 def p_if_else(t):
     '''if_else :'''
     jump_idx = JumpStack.pop()
-    quad = ['Goto', '', '', '____']
+    quad = ['Goto', '_', '_', '____']
     Quad.append(quad)
     JumpStack.append(len(Quad) - 1)
     Quad[jump_idx][-1] = len(Quad)
@@ -682,7 +682,7 @@ def p_repeticion_cond(t):
     '''repeticion_cond : mark_tag MIENTRAS LPAREN expresiones RPAREN if_jump HAZ LCORCHETE estatuto RCORCHETE'''
     end = JumpStack.pop()
     return_ = JumpStack.pop()
-    quad = ['Goto', '', '', return_]
+    quad = ['Goto', '_', '_', return_]
     Quad.append(quad)
     Quad[end][-1] = len(Quad)
 
@@ -696,7 +696,7 @@ def p_repeticion_no_cond(t):
 
 def p_iter_desde(t):
     '''iter_desde : asignacion'''
-    quad = ['Goto', '', '', '____']
+    quad = ['Goto', '_', '_', '____']
     Quad.append(quad)
     JumpStack.append(len(Quad) - 1)
     left_op = t[1]
@@ -713,7 +713,7 @@ def p_iter_desde(t):
     #Jump
     ForStack.append(len(Quad))
     Quad.append(quad)
-    quad = ['=', t[1], result, '']
+    quad = ['=', t[1], result, '_']
     Quad.append(quad)
     OpStack.append(t[1])
     TypeStack.append(left_type)
@@ -734,13 +734,13 @@ def p_comparacion_desde(t):
     Quad[jump_idx][-1] = len(Quad)
     quad = [oper, left_op, right_op, result]
     Quad.append(quad)
-    quad = ['GotoF', result, '', '____']
+    quad = ['GotoF', result, '_', '____']
     Quad.append(quad)
     JumpStack.append(len(Quad) - 1)
 
 def p_jump_back(t):
     '''jump_back :'''
-    quad = ['Goto', '', '', ForStack.pop()]
+    quad = ['Goto', '_', '_', ForStack.pop()]
     Quad.append(quad)
     jump_idx = JumpStack.pop()
     Quad[jump_idx][-1] = len(Quad)
@@ -1083,23 +1083,24 @@ while True:
             result = "err"
         if result == "COMPILADO":
             print("Se compilo exitosamente.")
-            print('       <Funciones')
+            orig_stdout = sys.stdout
+            f = open('!jitters.out', 'w')
+            sys.stdout = f
+            print('>Funciones')
             for program in TablaFunciones:
-                print ('p:' + program)
-                print ('(')
+                print ('p:',program)
                 for var in TablaFunciones[program]:
-                    print ('    ',var,' : ',TablaFunciones[program][var])
-                print (')')
-            print('       <Constantes')
+                    print (var,' : ',TablaFunciones[program][var])
+            print('>Constantes')
             for const in TablaConstantes:
-                print ('cons:' + str(const))
-                print ('(')
+                print (str(const))
                 for var in TablaConstantes[const]:
-                    print ('    ',var,' : ',TablaConstantes[const][var])
-                print (')')
-            print('       <Quads')
+                    print (var,' : ',TablaConstantes[const][var])
+            print('>Quads')
             for i in range(len(Quad)):
-                print(i, Quad[i][0],'|', Quad[i][1],'|', Quad[i][2],'|', Quad[i][3])
+                print(Quad[i][0], Quad[i][1], Quad[i][2], Quad[i][3])
+            sys.stdout = orig_stdout
+            f.close()
         clearEverything()
     except EOFError:
         print(EOFError)
