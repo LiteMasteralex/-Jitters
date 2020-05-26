@@ -131,3 +131,6 @@ Analizador/parsetab.pyc
 Analizador/lexer.pyc
 Analizador/parsetab.py
 Analizador/parser.out
+
+# Archivo out resultado de compilacion
+Analizador/!jitters.out
