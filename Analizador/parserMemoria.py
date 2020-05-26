@@ -75,6 +75,9 @@ def clearEverything():
     global current_type
     current_type = 'void'
 
+def countMemoria(contexto, tipo):
+    return Memoria[contexto][tipo] - (LimiteMemoria[contexto][tipo] - 1000)
+
 def asignarMemoria(contexto, tipo, dimension):
     global Memoria, LimiteMemoria
     ubicacion = Memoria[contexto][tipo]
@@ -127,6 +130,16 @@ def cuadruplosOperaciones():
 def p_programa(t):
     '''programa : PROGRAMA define_global SEMICOLON variables define_var_global funciones PRINCIPAL resolve_jump LPAREN RPAREN LCORCHETE estatuto RCORCHETE'''
     t[0] = "COMPILADO" # t[0] es lo que tiene como valor programa
+    TablaFunciones[t[2]]['int'] = countMemoria('Global', 'int')
+    TablaFunciones[t[2]]['float'] = countMemoria('Global', 'float')
+    TablaFunciones[t[2]]['char'] = countMemoria('Global', 'char')
+    TablaFunciones[t[2]]['tint'] = countMemoria('Temporal', 'int')
+    TablaFunciones[t[2]]['tfloat'] = countMemoria('Temporal', 'float')
+    TablaFunciones[t[2]]['tchar'] = countMemoria('Temporal', 'char')
+    TablaFunciones[t[2]]['bool'] = countMemoria('Temporal', 'bool')
+    TablaFunciones[t[2]]['addr'] = countMemoria('Temporal', 'addr')
+    
+
 
 def p_define_global(t):
     '''define_global : ID'''
@@ -136,6 +149,7 @@ def p_define_global(t):
     quad = ['Goto', '_', '_', '____']
     Quad.append(quad)
     JumpStack.append(len(Quad) - 1)
+    t[0] = t[1]
 
 def p_define_var_global(t):
     '''define_var_global :'''
@@ -246,6 +260,14 @@ def p_clear_vars(t):
         print("La funcion", current_function, "espera un valor de retorno de tipo", func_type, "pero ninguno fue recibido")
         raise ParserError()
     has_return = False
+    TablaFunciones[current_function]['int'] = countMemoria('Local', 'int')
+    TablaFunciones[current_function]['float'] = countMemoria('Local', 'float')
+    TablaFunciones[current_function]['char'] = countMemoria('Local', 'char')
+    TablaFunciones[current_function]['tint'] = countMemoria('Temporal', 'int')
+    TablaFunciones[current_function]['tfloat'] = countMemoria('Temporal', 'float')
+    TablaFunciones[current_function]['tchar'] = countMemoria('Temporal', 'char')
+    TablaFunciones[current_function]['bool'] = countMemoria('Temporal', 'bool')
+    TablaFunciones[current_function]['addr'] = countMemoria('Temporal', 'addr')
     clearLocales()
 
 

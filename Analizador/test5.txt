@@ -5,5 +5,5 @@ var int : i, j[5], k;
 
 principal() {
 	lee (i);
-  i = 5;
+	i = 5 + k;
 }
