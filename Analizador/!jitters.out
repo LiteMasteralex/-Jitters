@@ -1,0 +1,12 @@
+>Funciones
+p: myProgram
+tipo  :  void
+memory_size  :  48
+>Constantes
+5
+loc  :  12000
+tipo  :  int
+>Quads
+Goto _ _ 1
+LEE 1006 _ _
+= 1006 12000 _

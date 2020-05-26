@@ -4,5 +4,6 @@ var int : i, j[5], k;
   char : stop[10], go[5];
 
 principal() {
-	lee (i, pi[0][1]);
+	lee (i);
+  i = 5;
 }
