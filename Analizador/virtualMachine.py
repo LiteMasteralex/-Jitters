@@ -63,9 +63,10 @@ def escribe(left_op, right_op, res):
 	return None
 
 def lee(left_op, right_op, res):
-	lectura = input('$>')
+	lectura = input('!>')
 	value = ''
 	try:
+		print('Memo:',Memoria)
 		value = type(Memoria[left_op])(lectura)
 	except:
 		raise ExecuteError('Error de lectura')
@@ -81,7 +82,11 @@ def gotoF(left_op, right_op, res):
 		return res
 	return None
 
+def era(left_op, right_op, res):
+	return None
 
+# TODO(Cristina): CHECAR RANGO Y DEPENDIENDO DE CUAL ES SABER A DONDE 
+#		  DIRIGIRSE.
 def ejecutaQuadruplos():
 	quadNum = 0
 	while quadNum < len(Quads):
@@ -99,15 +104,97 @@ def ejecutaQuadruplos():
 			'=': asigna,
 			'ESCRIBE': escribe,
 			'LEE': lee,
-			'goto': goto,
-			'gotoF': gotoF
+			'Goto': goto,
+			'GotoF': gotoF,
+			'ERA': era
 		}
 		current = Quads[quadNum]
-		fun = switcher.get(current[0], "No existe la operacion")
+		fun = switcher.get(current[0], 'err')
+		print(fun)
 		res = fun(current[1], current[2], current[3])
 		if(res != None):
-			quadNum = res
+			quadNum = int(res)
 		else:
 			quadNum = quadNum + 1
 
-ejecutaQuadruplos()
+
+import sys
+import os
+
+def main():
+	global Quads, TablaFunciones, TablaConstantes
+	filepath = sys.argv[1]
+	if not os.path.isfile(filepath):
+		print("Error: el archivo {} no existe...".format(filepath))
+		sys.exit()
+	
+	Quads = []
+	TablaFunciones = {}
+	TablaConstantes = {}
+
+	pos = 1
+	f = open(filepath, 'r')
+	fl =f.readlines()
+
+	for line in range(len(fl)):
+		fl[line] = fl[line].rstrip()
+	
+	while fl[pos] != '>Constantes':
+		name = fl[pos].split()[-1]
+		TablaFunciones[name] = {} 
+		pos = pos + 1
+		while 'p:' not in fl[pos].split() and fl[pos] != '>Constantes' :
+			values = fl[pos].split()
+			TablaFunciones[name][values[0]] = values[-1]
+			pos = pos + 1
+
+	pos = pos + 1
+
+	while fl[pos] != '>Quads':
+		value = fl[pos]
+		loc = fl[pos + 1].split()[-1]
+		tipo = fl[pos + 2].split()[-1]
+		if tipo == 'int':
+			TablaConstantes[loc] = int(value)
+		elif tipo == 'float':
+			TablaConstantes[loc] = float(value)
+		else :
+			TablaConstantes[loc] = value
+		pos = pos + 3
+
+	pos = pos + 1
+
+	for qpos in range(pos, len(fl)):
+		quad = (fl[qpos].split())
+		Quads.append(quad)
+	
+	print(TablaConstantes)
+	print()
+	print(TablaFunciones)
+	print()
+	print(Quads)
+
+	#ejecutaQuadruplos()
+
+	
+		
+
+		
+				
+						
+						
+				
+
+		
+		
+		
+
+
+
+	
+			
+					
+				
+
+if __name__ == "__main__":
+    main()
