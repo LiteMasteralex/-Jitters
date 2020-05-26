@@ -1,9 +1,8 @@
 Programa myProgram;
-var int : i, j[5], k;
-  float : pi[5][5], msg;
-  char : stop[10], go[5];
+var int : i, k;
 
 principal() {
-	lee (i);
+	lee(k);
 	i = 5 + k;
+	escribe(i);
 }
