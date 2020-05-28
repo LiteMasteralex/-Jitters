@@ -5,20 +5,41 @@ Memoria = {
 	'Constante': {}
 }
 
+MemoriaTemp = {
+	'Global': {},
+	'Local': {},
+	'Temporal': {},
+	'Constante': {}
+}
+
+NextContext = []
+
+LastContext = []
+
+currentFunct = ''
+
+def clearMemTemp():
+	global MemoriaTemp
+	MemoriaTemp = {
+		'Global': {},
+		'Local': {},
+		'Temporal': {},
+		'Constante': {}
+	}
 
 def separaMemoria(contexto, tipo, size):
 	inicio = DefMemoria[contexto][tipo]
 	for loc in range(inicio, inicio + int(size)):
 		if(tipo == 'int'):
-			Memoria[contexto][str(loc)] = 0
+			MemoriaTemp[contexto][str(loc)] = 0
 		elif(tipo == 'float'):
-			Memoria[contexto][str(loc)] = 0.0
+			MemoriaTemp[contexto][str(loc)] = 0.0
 		elif(tipo == 'char'):
-			Memoria[contexto][str(loc)] = ''
+			MemoriaTemp[contexto][str(loc)] = ''
 		elif(tipo == 'bool'):
-			Memoria[contexto][str(loc)] = False
+			MemoriaTemp[contexto][str(loc)] = False
 		else:
-			Memoria[contexto][str(loc)] = 0
+			MemoriaTemp[contexto][str(loc)] = 0
 
 def obtenContexto(loc):
 	loc = int(loc)
@@ -40,6 +61,29 @@ def initContexto(nombre, contexto):
 	separaMemoria('Temporal', 'char', TablaFunciones[nombre]['tchar'])
 	separaMemoria('Temporal', 'bool', TablaFunciones[nombre]['bool'])
 	separaMemoria('Temporal', 'addr', TablaFunciones[nombre]['addr'])
+
+def asignaParametros(lista, params):
+	countI = DefMemoria['Local']['int']
+	countF = DefMemoria['Local']['float']
+	countC = DefMemoria['Local']['char']
+	for idx in range(len(lista)):
+		if(lista[idx] == 'i'):
+			Memoria['Local'][str(countI)] = params[idx]
+			countI = countI + 1
+		if(lista[idx] == 'f'):
+			Memoria['Local'][str(countF)] = params[idx]
+			countF = countF + 1
+		if(lista[idx] == 'c'):
+			Memoria['Local'][str(countC)] = params[idx]
+			countC = countC + 1
+
+def returnContext():
+	global currentFunct
+	last = LastContext.pop()
+	Memoria['Local'] = last['memoria']['Local']
+	Memoria['Temporal'] = last['memoria']['Temporal']
+	currentFunct = last['nombre']
+	return last['quad']
 
 class ExecuteError(Exception): pass
 
@@ -106,7 +150,7 @@ def escribe(left_op, right_op, res):
 		#print(left_op)
 	else:
 		leftCont = obtenContexto(left_op)
-		print(Memoria[leftCont][left_op])
+		print(Memoria[leftCont][left_op], end=" ")
 	return None
 
 def lee(left_op, right_op, res):
@@ -131,11 +175,43 @@ def gotoF(left_op, right_op, res):
 	return None
 
 def era(left_op, right_op, res):
+	global NextContext
+	initContexto(left_op, 'Local')
+	NextContext.append({'nombre': left_op,
+						'memoria': {'Local': MemoriaTemp['Local'],
+									'Temporal': MemoriaTemp['Temporal']},
+						'parametros': []})
+	clearMemTemp()
 	return None
+
+def parametro(left_op, right_op, res):
+	leftCont = obtenContexto(left_op)
+	NextContext[-1]['parametros'].append(Memoria[leftCont][left_op])
+	return None
+
+def gosub(left_op, right_op, res):
+	global LastContext, auxQuad, currentFunct
+	LastContext.append({'quad': auxQuad + 1, 'memoria': Memoria, 'nombre': currentFunct})
+	current = NextContext.pop()
+	currentFunct = current['nombre']
+	Memoria['Local'] = current['memoria']['Local']
+	Memoria['Temporal'] = current['memoria']['Temporal']
+	asignaParametros(TablaFunciones[current['nombre']]['parametros'], current['parametros'])
+	return TablaFunciones[current['nombre']]['start']
+
+def endproc(left_op, right_op, res):
+	return returnContext()
+
+def regresa(left_op, right_op, res):
+	loc = TablaFunciones[currentFunct]['loc']
+	resCont = obtenContexto(res)
+	Memoria['Global'][loc] = Memoria[resCont][res]
+	return returnContext()
 
 # TODO(Cristina): CHECAR RANGO Y DEPENDIENDO DE CUAL ES SABER A DONDE 
 #		  DIRIGIRSE.
 def ejecutaQuadruplos():
+	global auxQuad
 	quadNum = 0
 	while quadNum < len(Quads):
 		switcher = {
@@ -154,9 +230,14 @@ def ejecutaQuadruplos():
 			'LEE': lee,
 			'Goto': goto,
 			'GotoF': gotoF,
-			'ERA': era
+			'ERA': era,
+			'parametro': parametro,
+			'GOSUB': gosub,
+			'ENDPROC': endproc,
+			'regresa': regresa
 		}
 		current = Quads[quadNum]
+		auxQuad = quadNum
 		fun = switcher.get(current[0], 'err')
 		res = fun(current[1], current[2], current[3])
 		if(res != None):
@@ -191,7 +272,7 @@ import sys
 import os
 
 def main():
-	global Quads, TablaFunciones, TablaConstantes
+	global Quads, TablaFunciones, TablaConstantes, MemoriaTemp, Memoria
 	filepath = sys.argv[1]
 	if not os.path.isfile(filepath):
 		print("Error: el archivo {} no existe...".format(filepath))
@@ -238,6 +319,8 @@ def main():
 	# Inizalizacion contexto Global
 	name = fl[1].split()[-1]
 	initContexto(name, 'Global')
+	Memoria = MemoriaTemp
+	clearMemTemp()
 	Memoria['Constante'] = TablaConstantes
 
 	# Inizializacion Quads
@@ -245,13 +328,6 @@ def main():
 		quad = (fl[qpos].split())
 		Quads.append(quad)
 	
-	print(TablaConstantes)
-	print()
-	print(TablaFunciones)
-	print()
-	print(Quads)
-	print()
-	print(Memoria)
 
 	ejecutaQuadruplos()
 

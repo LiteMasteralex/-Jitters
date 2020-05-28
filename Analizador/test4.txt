@@ -7,13 +7,15 @@ funcion void voidFunction(int:id, float:margin);
   var int : subI;
   {
     subI = 50 + 35 * 9 - 50 + id;
+    escribe(subI);
   }
 
 funcion float floatFunction(int:valor);
   var float : subJ;
   {
-    i = k * j;
+    i = valor * 5;
     voidFunction(i, 2.0);
+    escribe(i);
     regresa (i * 1.0);
   }
 
@@ -21,5 +23,8 @@ principal() {
   j = 10;
   
   res = floatFunction(5) + 24;
+  pi[0][0] = res;
+
+  escribe(res);
 
 }
