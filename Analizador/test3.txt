@@ -3,14 +3,20 @@ var int : x, z, k;
 	float : y;
 	char : j;
 
+funcion void function(int:para1, int:para2);
+	var int : loc1;
+	{
+		loc1 = 3;
+		escribe(para1, para2, loc1);
+	}
+
+funcion int retorno();
+{
+	regresa(1 + 3);
+}
+
 principal() {
-  x = 5 + 5 + 5;
-#  x = function(x);
-#  x = y | z;
-  y = x * 5;
-#  x = x < 8;
-#  x = x$;
-  x = 10;
-  x = 5 + (5);
-  j = 'a';
+	function(1, 2);
+	x = retorno();
+	escribe(x);
 }
