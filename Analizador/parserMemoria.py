@@ -233,7 +233,7 @@ def p_funciones(t):
 
 def p_define_funct(t):
     '''define_funct : tipo_retorno ID'''
-    global TablaFunciones, current_function, TablaGlobales
+    global TablaFunciones, current_function, TablaGlobales, is_global, current_type
     if(t[2] not in TablaFunciones):
         if(t[2] in TablaGlobales):
             print("No pueden existir funciones con nombres de variables:", t[2])
@@ -245,6 +245,14 @@ def p_define_funct(t):
                                 'num_temporales': 0,
                                 'start':0}
         current_function = t[2]
+        if(t[1] != 'void'):
+            is_global = True
+            current_type = t[1]
+            variable = defineVariable(t[2], None)
+            TablaGlobales[t[2]] = variable
+            is_global = False
+            TablaFunciones[t[2]]['loc'] = variable['loc']
+
     else:
         print("La funcion ", t[2], " ya esta definida")
         raise ParserError()
@@ -544,9 +552,11 @@ def p_funcion_retorno(t):
         quad = ['GOSUB', t[1], '_', '_']
         Quad.append(quad)
         tipo = TablaFunciones[t[1]]['tipo']
-        loc, size = asignarMemoria('Local', tipo, None)
-        TablaVariables[t[1]] = {'loc': loc, 'tipo': tipo, 'dimensiones': 0}
-        OpStack.append(loc)
+        loc = TablaFunciones[t[1]]['loc']
+        locTemp, size = asignarMemoria('Temporal', tipo, None)
+        quad = ['=', locTemp, loc, '_']
+        Quad.append(quad)
+        OpStack.append(locTemp)
         TypeStack.append(tipo)
         
     else:
