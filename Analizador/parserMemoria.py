@@ -656,7 +656,6 @@ def p_valor_lectura(t):
 # ESCRITURA
 def p_escritura(t):
     '''escritura : ESCRIBE LPAREN escritura_1 RPAREN SEMICOLON'''
-    TypeStack.pop()
 def p_escritura_1(t):
     '''escritura_1 : imprimir escritura_2'''
     
@@ -670,12 +669,19 @@ def p_escritura_2(t):
 def p_imprimir(t):
     '''imprimir : STRING
                   | expresiones'''
-    if(len(OpStack) > 0):
+    if(t[1] == None):
         exp = OpStack.pop()
+        TypeStack.pop()
         quad = ['ESCRITURA', exp , '_', '_']
         Quad.append(quad)
     else:
-        quad = ['ESCRITURA', t[1] , '_', '_']
+        string = t[1].replace('"', '')
+        if(string in TablaConstantes):
+            loc = TablaConstantes[string]['loc']
+        else:
+            loc, size = asignarMemoria('CTE', 'str', None)
+            TablaConstantes[string] = {'loc': loc, 'tipo': 'str'}
+        quad = ['ESCRITURA', loc , '_', '_']
         Quad.append(quad)
     
     
@@ -1070,7 +1076,8 @@ Memoria = {
     'CTE': {
         'int': 12000,
         'float': 13000,
-        'char': 14000
+        'char': 14000,
+        'str': 15000
     }
 }
 
@@ -1095,7 +1102,8 @@ LimiteMemoria = {
     'CTE': {
         'int': 13000,
         'float': 14000,
-        'char': 15000
+        'char': 15000,
+        'str': 16000
     }
 }
 

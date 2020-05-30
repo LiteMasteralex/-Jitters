@@ -2,9 +2,5 @@ Programa myProgram;
 var int : i, k;
 
 principal() {
-	k = 0;
-	desde i = 1; hasta 10 hacer {
-		k = k + 1;
-	}
-	escribe(k);
+	escribe("Hola");
 }
