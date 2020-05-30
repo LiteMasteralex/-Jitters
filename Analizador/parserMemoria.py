@@ -414,6 +414,7 @@ def p_matriz(t):
     variable = obtenVariable(DimenIdentStack[-1])
     res, size = asignarMemoria('Temporal', 'addr', None)
     quad = ['+Addr', aux, variable['loc'], res]
+    TablaFunciones[current_function]['addr'] = TablaFunciones[current_function]['addr'] + 1
     Quad.append(quad)
     OpStack.append(res)
     t[0] = t[1]
@@ -460,7 +461,12 @@ def p_index_dim(t):
     if(dimension['nxt'] != None):
         left_op = OpStack.pop()
         result, size = asignarMemoria('Temporal', 'int', None)
-        quad = ['*', left_op, dimension['sup'], result]
+        if(dimension['sup'] in TablaConstantes):
+            loc = TablaConstantes[dimension['sup']]['loc']
+        else:
+            loc, size = asignarMemoria('CTE', current_type, None)
+            TablaConstantes[dimension['sup']] = {'loc': loc, 'tipo': current_type}
+        quad = ['*', left_op, loc, result]
         Quad.append(quad)
         OpStack.append(result)
     else:
