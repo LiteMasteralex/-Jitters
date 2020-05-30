@@ -94,7 +94,6 @@ def addrCheck(left, right, res):
 		except:
 			value = 0
 		if(value >= 11000 and value < 12000):
-			#print(Memoria)
 			results.append(Memoria['Temporal'][str(value)])
 		else:
 			results.append(var)
@@ -265,7 +264,7 @@ def ejecutaQuadruplos():
 		auxQuad = quadNum
 		fun = switcher.get(current[0], 'err')
 		left_op, right_op, res = addrCheck(current[1], current[2], current[3])
-		if(current[0] != '+Addr'):
+		if(current[0] == '+Addr'):
 			res = current[3]
 		res = fun(left_op, right_op, res)
 		if(res != None):

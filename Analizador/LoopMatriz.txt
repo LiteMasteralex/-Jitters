@@ -1,0 +1,19 @@
+Programa myProgram;
+var float : pi[3][3];
+  int : idxX, idxY;
+
+principal() {
+  # Lee los datos de la matriz
+  desde idxX = 0; hasta 2 hacer {
+    desde idxY = 0; hasta 2 hacer {
+      escribe(idxX, idxY);
+      lee(pi[idxX][idxY]);
+    }
+  }
+
+  # Escribe los datos de la matriz
+  desde idxX = 0; hasta 2 hacer {
+    escribe(pi[idxX][0], pi[idxX][1], pi[idxX][2]);
+  }
+
+}

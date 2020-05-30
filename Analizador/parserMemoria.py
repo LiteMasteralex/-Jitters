@@ -414,7 +414,6 @@ def p_matriz(t):
     variable = obtenVariable(DimenIdentStack[-1])
     res, size = asignarMemoria('Temporal', 'addr', None)
     quad = ['+Addr', aux, variable['loc'], res]
-    TablaFunciones[current_function]['addr'] = TablaFunciones[current_function]['addr'] + 1
     Quad.append(quad)
     OpStack.append(res)
     t[0] = t[1]
