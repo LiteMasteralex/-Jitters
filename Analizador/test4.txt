@@ -25,6 +25,6 @@ principal() {
   res = floatFunction(5) + 24;
   pi[0][0] = res;
 
-  escribe(res);
+  escribe(pi[0][0]);
 
 }

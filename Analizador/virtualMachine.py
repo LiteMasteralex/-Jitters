@@ -78,12 +78,27 @@ def asignaParametros(lista, params):
 			countC = countC + 1
 
 def returnContext():
-	global currentFunct
+	global currentFunct, Memoria
 	last = LastContext.pop()
 	Memoria['Local'] = last['memoria']['Local']
 	Memoria['Temporal'] = last['memoria']['Temporal']
 	currentFunct = last['nombre']
 	return last['quad']
+
+def addrCheck(left, right, res):
+	params = [left, right, res]
+	results = []
+	for var in params:
+		try:
+			value = int(var)
+		except:
+			value = 0
+		if(value >= 11000 and value < 12000):
+			#print(Memoria)
+			results.append(Memoria['Temporal'][str(value)])
+		else:
+			results.append(var)
+	return results
 
 class ExecuteError(Exception): pass
 
@@ -175,7 +190,7 @@ def gotoF(left_op, right_op, res):
 	return None
 
 def era(left_op, right_op, res):
-	global NextContext
+	global NextContext, MemoriaTemp
 	initContexto(left_op, 'Local')
 	NextContext.append({'nombre': left_op,
 						'memoria': {'Local': MemoriaTemp['Local'],
@@ -190,8 +205,10 @@ def parametro(left_op, right_op, res):
 	return None
 
 def gosub(left_op, right_op, res):
-	global LastContext, auxQuad, currentFunct
-	LastContext.append({'quad': auxQuad + 1, 'memoria': Memoria, 'nombre': currentFunct})
+	global LastContext, auxQuad, currentFunct, Memoria
+	LastContext.append({'quad': auxQuad + 1,
+						'memoria': {'Local': Memoria['Local'], 'Temporal':Memoria['Temporal']},
+						'nombre': currentFunct})
 	current = NextContext.pop()
 	currentFunct = current['nombre']
 	Memoria['Local'] = current['memoria']['Local']
@@ -207,6 +224,13 @@ def regresa(left_op, right_op, res):
 	resCont = obtenContexto(res)
 	Memoria['Global'][loc] = Memoria[resCont][res]
 	return returnContext()
+
+def sumaAddr(left_op, right_op, res):
+	leftCont, resCont = obtenContexto(left_op), obtenContexto(res)
+	Memoria[resCont][res] = str(Memoria[leftCont][left_op] + int(right_op))
+	return None
+
+
 
 # TODO(Cristina): CHECAR RANGO Y DEPENDIENDO DE CUAL ES SABER A DONDE 
 #		  DIRIGIRSE.
@@ -234,12 +258,16 @@ def ejecutaQuadruplos():
 			'parametro': parametro,
 			'GOSUB': gosub,
 			'ENDPROC': endproc,
-			'regresa': regresa
+			'regresa': regresa,
+			'+Addr': sumaAddr
 		}
 		current = Quads[quadNum]
 		auxQuad = quadNum
 		fun = switcher.get(current[0], 'err')
-		res = fun(current[1], current[2], current[3])
+		left_op, right_op, res = addrCheck(current[1], current[2], current[3])
+		if(current[0] != '+Addr'):
+			res = current[3]
+		res = fun(left_op, right_op, res)
 		if(res != None):
 			quadNum = int(res)
 		else:
