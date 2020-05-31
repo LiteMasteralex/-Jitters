@@ -6,29 +6,33 @@ var int : j, i, p;
 
 funcion int fact (int : j);
     var int : f;
-    { f= j + (p - j*2+j);
-    si (j == 1) entonces
-        { regresa (j);}
-    sino
-        { regresa(j * fact(j-1))}         
+    { 
+        f = j + (p - j*2+j);
+        si (j == 1) entonces
+            { regresa (j); }
+        sino
+            { regresa(j * fact(j-1)) }         
     }
 
 funcion void inicia (int : y);
     var int : x;
-    { x= 0;
-    mientras (x < 11) haz
-        {
-            Arreglo[x] = y * x;
-            x = x+1;
-        }
+    { 
+        x= 0;
+        mientras (x < 11) haz
+            {
+                Arreglo[x] = y * x;
+                x = x+1;
+            }
     }
 
 principal()
-{ lee(p) ; j = p *2;
+{ 
+    lee(p) ; 
+    j = p * 2;
     inicia ( p * j - 5);
     desde i=0; hasta 9 hacer
         { Arreglo[i] = Arreglo[i] * fact(Arregla);}
-    OtroArreglo = Arreglo;
+    # OtroArreglo = Arreglo;
     desde j=0; hasta 2 hacer{
         desde k= 0 hasta 7 hacer
         { Matriz[j][k] = OtroArreglo[j] * p + fact(p);} # No lo puse igual porque estaba raro
@@ -39,9 +43,9 @@ principal()
             {OtraMatriz[j][k] = k + j;}
     ;}
     valor = OtraMatriz$ ;
-    escribe("el determinante es: ", valor);
+    escribe(valor , valor);
     mientras (i >= 0)
     {
-        escribe("resultado", Arreglo[i], fact(i+2) * valor);
+        escribe(valor, Arreglo[i], fact(i+2) * valor);
     }
 }

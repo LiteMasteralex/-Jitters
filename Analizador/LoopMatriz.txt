@@ -6,7 +6,7 @@ principal() {
   # Lee los datos de la matriz
   desde idxX = 0; hasta 2 hacer {
     desde idxY = 0; hasta 2 hacer {
-      escribe(idxX, idxY);
+      escribe("Ingresa dato de la clumna", idxY,"y renglon", idxX );
       lee(pi[idxX][idxY]);
     }
   }
