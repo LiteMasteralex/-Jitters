@@ -395,7 +395,7 @@ def p_identificadores(t):
         }
     t[0] = {'name':t[1], 'nxt': dimension} 
 
-def p_indent_exp(t):
+def p_ident_exp(t):
     '''ident_exp : matriz
                     | arreglo
                     | check_id'''
