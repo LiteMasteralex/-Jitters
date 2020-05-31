@@ -399,38 +399,31 @@ def p_ident_exp(t):
     '''ident_exp : matriz
                     | arreglo
                     | check_id'''
-    DimensionStack.pop()
-    DimensionNumStack.pop()
-    DimenIdentStack.pop()
-    t[0] = t[1]['loc']
-
-def p_matriz(t):
-    '''matriz : check_id check_dim LBRACKET expresiones index_dim RBRACKET check_dim LBRACKET expresiones index_dim RBRACKET'''
-    
-    aux = OpStack.pop()
-    variable = obtenVariable(DimenIdentStack[-1])
-    res, size = asignarMemoria('Temporal', 'addr', None)
-    quad = ['+Addr', aux, variable['loc'], res]
-    Quad.append(quad)
-    OpStack.append(res)
-    t[0] = t[1]
-
-
-def p_arreglo(t):
-    '''arreglo : check_id check_dim LBRACKET expresiones index_dim RBRACKET'''
-    name = DimenIdentStack[-1]
-    dimension = DimensionStack[-1]
-    num_dim = DimensionNumStack[-1]
-    variable = obtenVariable(DimenIdentStack[-1])
-    res, size = asignarMemoria('Temporal', 'addr', None)
+    name = DimenIdentStack.pop()
+    dimension = DimensionStack.pop()
+    num_dim = DimensionNumStack.pop()
     if(dimension != None):
         print("La variable", name, "no es de", num_dim, "dimensiones")
         raise ParserError()
+    t[0] = t[1]['loc']
+
+def p_matriz(t):
+    '''matriz : check_id check_dim LBRACKET expresiones index_dim RBRACKET check_dim LBRACKET expresiones index_dim RBRACKET off_set_dir'''
+    t[0] = t[1]
+
+def p_arreglo(t):
+    '''arreglo : check_id check_dim LBRACKET expresiones index_dim RBRACKET off_set_dir'''
+    t[0] = t[1]
+
+
+def p_off_set_dir(t):
+    '''off_set_dir : '''
     aux = OpStack.pop()
+    variable = obtenVariable(DimenIdentStack[-1])
+    res, size = asignarMemoria('Temporal', 'addr', None)
     quad = ['+Addr', aux, variable['loc'], res]
     Quad.append(quad)
     OpStack.append(res)
-    t[0] = t[1]
 
 
 
@@ -903,7 +896,7 @@ Semantica = {
             '==': 'bool',
             '&': 'err',
             '|': 'err',
-            '=': 'float'
+            '=': 'err'
         },
         'float': {
             '+': 'float',
