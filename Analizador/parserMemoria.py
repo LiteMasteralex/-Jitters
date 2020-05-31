@@ -456,16 +456,22 @@ def p_index_dim(t):
     if(tipo != 'int'):
         print("Las variables dimensionadas solo pueden ser indexadas con valores de tipo int")
         raise ParserError()
-    quad = ['verify', OpStack[-1], dimension['inf'], dimension['sup']]
+    if(dimension['inf'] in TablaConstantes):
+        locInf = TablaConstantes[dimension['inf']]['loc']
+    else:
+        locInf, size = asignarMemoria('CTE', current_type, None)
+        TablaConstantes[dimension['inf']] = {'loc': locInf, 'tipo': current_type}
+    if(dimension['sup'] in TablaConstantes):
+        locSup = TablaConstantes[dimension['sup']]['loc']
+    else:
+        locSup, size = asignarMemoria('CTE', current_type, None)
+        TablaConstantes[dimension['sup']] = {'loc': locSup, 'tipo': current_type}
+    quad = ['VER', OpStack[-1], locInf, locSup]
+    Quad.append(quad)
     if(dimension['nxt'] != None):
         left_op = OpStack.pop()
         result, size = asignarMemoria('Temporal', 'int', None)
-        if(dimension['sup'] in TablaConstantes):
-            loc = TablaConstantes[dimension['sup']]['loc']
-        else:
-            loc, size = asignarMemoria('CTE', current_type, None)
-            TablaConstantes[dimension['sup']] = {'loc': loc, 'tipo': current_type}
-        quad = ['*', left_op, loc, result]
+        quad = ['*', left_op, locSup, result]
         Quad.append(quad)
         OpStack.append(result)
     else:
@@ -1110,49 +1116,50 @@ LimiteMemoria = {
 class ParserError(Exception): pass
 
 import sys
-import pprint
 import ply.yacc as yacc
 
 from lexer import tokens
 
 parser = yacc.yacc()
-pp = pprint.PrettyPrinter(indent=4)
 
-while True:
-    try:
-        s = input('!Jitters > ') # solo 'input()' para py3
-        file = str(s)
-        if s == "":
-            sys.exit('bye')
-        f = open(file, 'r')
-        data = f.read()
-        f.close()
+if __name__ == '__main__':
+
+    if len(sys.argv) == 2:
+        file = str(sys.argv[1])
         try:
-            result = parser.parse(data)
-        except ParserError:
-            result = "err"
-        if result == "COMPILADO":
-            print("Se compilo exitosamente.")
-            orig_stdout = sys.stdout
-            f = open('!jitters.out', 'w')
-            sys.stdout = f
-            print('>Funciones')
-            for program in TablaFunciones:
-                print ('p:',program)
-                for var in TablaFunciones[program]:
-                    print (var,' : ',TablaFunciones[program][var])
-            print('>Constantes')
-            for const in TablaConstantes:
-                print (str(const))
-                for var in TablaConstantes[const]:
-                    print (var,' : ',TablaConstantes[const][var])
-            print('>Quads')
-            for i in range(len(Quad)):
-                print(Quad[i][0], Quad[i][1], Quad[i][2], Quad[i][3])
-            sys.stdout = orig_stdout
+            f = open(file, 'r')
+            data = f.read()
             f.close()
-        clearEverything()
-    except EOFError:
-        print(EOFError)
-    if not s: continue
+            try:
+                result = parser.parse(data)
+            except ParserError:
+                result = "err"
+            if result == "COMPILADO":
+                print("Se compilo exitosamente.")
+                orig_stdout = sys.stdout
+                f = open('!jitters.out', 'w')
+                sys.stdout = f
+                print('>Funciones')
+                for program in TablaFunciones:
+                    print ('p:',program)
+                    for var in TablaFunciones[program]:
+                        print (var,' : ',TablaFunciones[program][var])
+                print('>Constantes')
+                for const in TablaConstantes:
+                    print (str(const))
+                    for var in TablaConstantes[const]:
+                        print (var,' : ',TablaConstantes[const][var])
+                print('>Quads')
+                for i in range(len(Quad)):
+                    print(Quad[i][0], Quad[i][1], Quad[i][2], Quad[i][3])
+                sys.stdout = orig_stdout
+                f.close()
+            clearEverything()
+        except EOFError:
+            print(EOFError)
+    elif len(sys.argv) < 2:
+        print("No se ingreso el archivo a compilar")
+    else :
+        print("Se ingresaron argumentos no solicitados")
+            
     
