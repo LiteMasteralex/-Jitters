@@ -144,7 +144,7 @@ def p_programa(t):
 def p_define_global(t):
     '''define_global : ID'''
     global TablaFunciones, current_function
-    TablaFunciones[t[1]] = {'tipo': 'void', 'memory_size': 0}
+    TablaFunciones[t[1]] = {'tipo': 'void'}
     current_function = t[1]
     quad = ['Goto', '_', '_', '____']
     Quad.append(quad)
@@ -180,7 +180,6 @@ def p_variables(t):
             else:
                 print("La variable ", var['name'], " ya esta definida")
                 raise ParserError()
-        TablaFunciones[current_function]['memory_size'] = TablaFunciones[current_function]['memory_size'] + size
 
 def p_variables_1(t):
     '''variables_1 : tipo COLON lista_ids SEMICOLON variables_1
@@ -241,7 +240,6 @@ def p_define_funct(t):
         TablaFunciones[t[2]] = {'tipo': t[1], 
                                 'parametros': '', 
                                 'num_parametros': 0, 
-                                'memory_size': 0,
                                 'num_temporales': 0,
                                 'start':0}
         current_function = t[2]
@@ -308,7 +306,6 @@ def p_parametros(t):
     global TablaFunciones, current_function
     if(len(t) > 2):
         TablaFunciones[current_function]['num_parametros'] = t[2] + 1
-        TablaFunciones[current_function]['memory_size'] = TablaFunciones[current_function]['memory_size'] + t[2] + 1
 def p_variables_2(t):
     '''variables_2 : COMMA def_parameters variables_2
                     | empty'''
