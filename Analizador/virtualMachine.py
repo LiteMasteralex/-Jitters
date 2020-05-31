@@ -229,10 +229,14 @@ def sumaAddr(left_op, right_op, res):
 	Memoria[resCont][res] = str(Memoria[leftCont][left_op] + int(right_op))
 	return None
 
+def ver(left_op, right_op, res):
+	leftCont, rightCont, resCont = obtenContexto(left_op), obtenContexto(right_op), obtenContexto(res)
+	valor, valorInf, valorSup = Memoria[leftCont][left_op], Memoria[rightCont][right_op], Memoria[resCont][res]
+	if(valor < valorSup and valor >= valorInf):
+		return None
+	else:
+		raise ExecuteError('Index fuera del rango')
 
-
-# TODO(Cristina): CHECAR RANGO Y DEPENDIENDO DE CUAL ES SABER A DONDE 
-#		  DIRIGIRSE.
 def ejecutaQuadruplos():
 	global auxQuad
 	quadNum = 0
@@ -258,7 +262,8 @@ def ejecutaQuadruplos():
 			'GOSUB': gosub,
 			'ENDPROC': endproc,
 			'regresa': regresa,
-			'+Addr': sumaAddr
+			'+Addr': sumaAddr,
+			'VER': ver
 		}
 		current = Quads[quadNum]
 		auxQuad = quadNum
@@ -359,24 +364,5 @@ def main():
 	ejecutaQuadruplos()
 
 	
-		
-
-		
-				
-						
-						
-				
-
-		
-		
-		
-
-
-
-	
-			
-					
-				
-
 if __name__ == "__main__":
     main()
