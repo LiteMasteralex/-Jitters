@@ -322,7 +322,7 @@ def p_def_parameters(t):
         raise ParserError()
     else:
         loc, size = asignarMemoria('Local', t[1], None)
-        TablaVariables[t[3]] = {'loc': loc, 'tipo':t[1], 'nxt': 0}
+        TablaVariables[t[3]] = {'loc': loc, 'tipo':t[1], 'nxt': None}
         TablaFunciones[current_function]['parametros'] = TablaFunciones[current_function]['parametros'] + t[1][0]
 
 #ESTATUTO
@@ -596,6 +596,7 @@ def p_funcion_void(t):
     else:
         print("La funcion", t[1], "espera", len(current_params), "parametros, pero recibio", countParams)
         raise ParserError()
+    
 
 def p_check_function(t):
     '''check_function : ID'''
