@@ -18,7 +18,6 @@ DimensionStack = []
 DimensionNumStack = []
 
 #Memoria
-countConstantes = 0
 countParams = 0
 
 # Auxiliares
@@ -28,6 +27,7 @@ current_params = ''
 has_return = False
 is_global = True
 
+# Esta funcion regresa la memoria Local y Temporal a su estado original
 def clearLocales():
     global Memoria
     Memoria['Local'] = {
@@ -45,7 +45,7 @@ def clearLocales():
     }
 
 
-
+# Esta funcion limpia todas las tablas y constantes que se usaron para asegurar que no haya nada resiudal si se quiere seguir compliando
 def clearEverything():
     # Tablas
     global TablaFunciones, TablaVariables, TablaGlobales
@@ -68,16 +68,15 @@ def clearEverything():
 
     clearLocales()
 
-    global countConstantes
-    countConstantes = 0
-
     # Auxiliares
     global current_type
     current_type = 'void'
 
+# Esta funcion regresa el numero de variables de un tipo segun el contexto
 def countMemoria(contexto, tipo):
     return Memoria[contexto][tipo] - (LimiteMemoria[contexto][tipo] - 1000)
 
+# Esta funcion le asigna a una variable la direccion donde empieza su memoria y el tamaño de esta memoria
 def asignarMemoria(contexto, tipo, dimension):
     global Memoria, LimiteMemoria
     ubicacion = Memoria[contexto][tipo]
@@ -87,10 +86,11 @@ def asignarMemoria(contexto, tipo, dimension):
         dimension = dimension['nxt']
     Memoria[contexto][tipo] = ubicacion + size
     if(ubicacion >= LimiteMemoria[contexto][tipo]):
-        print("ran out of memory") #TODO: definir bein el error
+        print("No hay mas espacios de tipo", tipo) #Este error no deberia de causarse en compliacion solo nos sirve a nosotros para definir los limites de memoria de cada tipo
         raise ParserError()
     return ubicacion, size
 
+# Esta funcion regresa una nueva variable con la estructura completa que se necesita para agregarla a la Tabla de funciones
 def defineVariable(nombre, dimension):
     global is_global, current_type
     if(is_global):
@@ -100,18 +100,19 @@ def defineVariable(nombre, dimension):
         memoria, size = asignarMemoria('Local', current_type, dimension)
         return {'name': nombre, 'loc': memoria, 'nxt': dimension, 'size': size}
 
-def obtenVariable(nombre):
+# Busca la variable en las definiciones actuales y regresa su valor
+def obtenVariable(nombre, lineNo):
     variable = ''
     if nombre in TablaVariables:
         variable = TablaVariables[nombre]
     elif nombre in TablaGlobales:
         variable = TablaGlobales[nombre]
     else:
-        print("La variable ", nombre, " no esta definida")
+        print("La variable '{0}' no esta definida en la linea {1}".format(nombre, lineNo))
         raise ParserError()
     return variable
-
-def cuadruplosOperaciones():
+# Esta funcion realiza la generacion de cuadruplos para las operaciones normales en las expresiones
+def cuadruplosOperaciones(lineNo):
     right_op = OpStack.pop()
     right_type = TypeStack.pop()
     left_op = OpStack.pop()
@@ -119,13 +120,15 @@ def cuadruplosOperaciones():
     oper = OperStack.pop()
     res_type = Semantica[right_type][left_type][oper]
     if(res_type == 'err'):
-        print("Error de semantica!!!! ", right_type, left_type, oper)
+        print("Error de Semantica en la linea {0}: la operacion '{1} {2} {3}' no esta permitida".format(lineNo, left_type, oper, right_type))
         raise ParserError()
     result, size = asignarMemoria('Temporal', res_type, None)
     quad = [oper, left_op, right_op, result]
     Quad.append(quad)
     OpStack.append(result)
     TypeStack.append(res_type)
+
+# Aqui iniican las reglas gramaticales que se usan en el parser
 # PROGRAMA
 def p_programa(t):
     '''programa : PROGRAMA define_global SEMICOLON variables define_var_global funciones PRINCIPAL resolve_jump LPAREN RPAREN LCORCHETE estatuto RCORCHETE'''
@@ -167,18 +170,18 @@ def p_resolve_jump(t):
 def p_variables(t):
     '''variables : VAR tipo COLON lista_ids SEMICOLON variables_1
                 | empty'''
-    global TablaVariables, TablaFunciones, current_function, TablaFunciones
+    global TablaVariables, TablaFunciones, TablaFunciones
     if(len(t) > 2):
         size = t[6]
         for var in t[4]:
             if var['name'] not in TablaVariables:
                 if var['name'] in TablaFunciones:
-                    print("No pueden haber variables con nombre de funciones:", var['name'])
+                    print("La variable '{0}' no puede tener el nombre de una fucion en la linea {1}".format(var['name'], t.lineno(3)))
                     raise ParserError()
                 TablaVariables[var['name']] = {'tipo': t[2], 'nxt': var['nxt'], 'loc': var['loc']}
                 size = size + var['size']
             else:
-                print("La variable ", var['name'], " ya esta definida")
+                print("La variable '{0}' ya esta defnida en la linea {1}".format(var['name'], t.lineno(4)))
                 raise ParserError()
 
 def p_variables_1(t):
@@ -190,12 +193,12 @@ def p_variables_1(t):
         for var in t[3]:
             if var['name'] not in TablaVariables:
                 if var['name'] in TablaFunciones:
-                    print("No pueden haber variables con nombre de funciones:", var['name'])
+                    print("La variable '{0}' no puede tener el nombre de una fucion en la linea {1}".format(var['name'], t.lineno(3)))
                     raise ParserError()
                 TablaVariables[var['name']] = {'tipo': t[1], 'nxt': var['nxt'], 'loc': var['loc']}
                 size = size + var['size']
             else:
-                print("La variable ", var['name'], " ya esta definida")
+                print("La variable '{0}' ya esta defnida en la linea {1}".format(var['name'], t.lineno(3)))
                 raise ParserError()
     else:
         size = t[1]
@@ -235,7 +238,7 @@ def p_define_funct(t):
     global TablaFunciones, current_function, TablaGlobales, is_global, current_type
     if(t[2] not in TablaFunciones):
         if(t[2] in TablaGlobales):
-            print("No pueden existir funciones con nombres de variables:", t[2])
+            print("La funcion '{0}' no puede tener el nombre de una variable en la linea {1}".format(t[2], t.lineno(2)))
             raise ParserError()
         TablaFunciones[t[2]] = {'tipo': t[1], 
                                 'parametros': '', 
@@ -252,7 +255,7 @@ def p_define_funct(t):
             TablaFunciones[t[2]]['loc'] = variable['loc']
 
     else:
-        print("La funcion ", t[2], " ya esta definida")
+        print("La funcion '{0}' ya esta defnida en la linea {1}".format(t[2], t.lineno(2)))
         raise ParserError()
 
 def p_clear_vars(t):
@@ -263,7 +266,7 @@ def p_clear_vars(t):
     Quad.append(quad)
     func_type = TablaFunciones[current_function]['tipo']
     if(not has_return and func_type != 'void'):
-        print("La funcion", current_function, "espera un valor de retorno de tipo", func_type, "pero ninguno fue recibido")
+        print("La funcion '{0}' espera un valor de retorno de tipo '{1}' pero ninguno fue recibido".format(current_function, func_type))
         raise ParserError()
     has_return = False
     TablaFunciones[current_function]['int'] = countMemoria('Local', 'int')
@@ -318,7 +321,7 @@ def p_def_parameters(t):
     '''def_parameters : tipo COLON ID'''
     global TablaVariables, TablaFunciones, current_function
     if t[3] in TablaVariables:
-        print("La variable", t[3], 'ya esta definida')
+        print("La variable '{0}' ya esta defnida en la linea {1}".format(t[3], t.lineno(3)))
         raise ParserError()
     else:
         loc, size = asignarMemoria('Local', t[1], None)
@@ -347,8 +350,7 @@ def p_asignacion(t):
     left_type = TypeStack.pop()
     res_type = Semantica[left_type][right_type]['=']
     if(res_type == 'err'):
-        print('No se le puede asignar un', right_type, 'a un', left_type)
-        print('Type Missmatch:','La variable no es tipo', right_type)
+        print("Error de Semantica en la linea {0}: la operacion '{1} = {2}' no esta permitida".format(t.lineno(2), left_type, right_type))
         raise ParserError()
     quad = ['=', left_op, right_op, '_']
     Quad.append(quad)
@@ -357,7 +359,7 @@ def p_asignacion(t):
 def p_check_id(t):
     '''check_id : ID'''
     # Buscar en tablas de variables
-    variable = obtenVariable(t[1])
+    variable = obtenVariable(t[1], t.lineno(1))
     OpStack.append(variable['loc'])
     TypeStack.append(variable['tipo'])
     DimenIdentStack.append(t[1])
@@ -373,7 +375,7 @@ def p_identificadores(t):
     dimension = None
     if(len(t) > 2):
         if(t[3] < 0):
-            print("Las variables dimensionadas no pueden utilizar indices negativos")
+            print("Error de indexamiento en la linea {0}: Los indices no pueden ser negativos".format(t.lineno(1)))
             raise ParserError()
         dimension = {
             'inf': 0,
@@ -382,7 +384,7 @@ def p_identificadores(t):
         }
     if(len(t) > 5):
         if(t[3] < 0 or t[6] < 0):
-            print("Las variables dimensionadas no pueden utilizar indices negativos")
+            print("Error de indexamiento en la linea {0}: Los indices no pueden ser negativos".format(t.lineno(1)))
             raise ParserError()
         dimension = {
             'inf': 0,
@@ -403,7 +405,7 @@ def p_ident_exp(t):
     dimension = DimensionStack.pop()
     num_dim = DimensionNumStack.pop()
     if(dimension != None):
-        print("La variable", name, "no es de", num_dim, "dimensiones")
+        print("La variable '{0}' no es de {1} dimensiones en la linea {2}".format(name, num_dim, t.lineno(1)))
         raise ParserError()
     t[0] = t[1]['loc']
 
@@ -419,7 +421,7 @@ def p_arreglo(t):
 def p_off_set_dir(t):
     '''off_set_dir : '''
     aux = OpStack.pop()
-    variable = obtenVariable(DimenIdentStack[-1])
+    variable = obtenVariable(DimenIdentStack[-1], t.lineno)
     res, size = asignarMemoria('Temporal', 'addr', None)
     quad = ['+Addr', aux, variable['loc'], res]
     Quad.append(quad)
@@ -433,7 +435,7 @@ def p_check_dim(t):
     dimension = DimensionStack[-1]
     num_dim = DimensionNumStack[-1]
     if(dimension == None):
-        print("La variable", name, "es de", num_dim, "dimensiones")
+        print("La variable '{0}' es de {1} dimensiones en la linea {2}".format(name, num_dim, t.lineno(0)))
         raise ParserError()
 
 
@@ -444,7 +446,7 @@ def p_index_dim(t):
     num_dim = DimensionNumStack[-1]
     tipo = TypeStack.pop()
     if(tipo != 'int'):
-        print("Las variables dimensionadas solo pueden ser indexadas con valores de tipo int")
+        print("Error de indexamiento en la linea {0}: solo se puede indexar con valores de tipo int".format(t.lineno(0)))
         raise ParserError()
     if(dimension['inf'] in TablaConstantes):
         locInf = TablaConstantes[dimension['inf']]['loc']
@@ -499,7 +501,7 @@ def p_factores(t):
                 | especiales factores_1 factores'''
     if(len(t) > 2):
         if(OperStack[-1] == '*' or OperStack[-1] == '/'):
-            cuadruplosOperaciones()
+            cuadruplosOperaciones(t.lineno(1))
 
 
 def p_factores_1(t):
@@ -513,7 +515,7 @@ def p_aritmeticos(t):
                     | factores aritmeticos_1 aritmeticos'''
     if(len(t) > 2):
         if(OperStack[-1] == '+' or OperStack[-1] == '-'):
-            cuadruplosOperaciones()
+            cuadruplosOperaciones(t.lineno(1))
 def p_aritmeticos_1(t):
     '''aritmeticos_1 : PLUS 
                      | MINUS'''
@@ -525,7 +527,7 @@ def p_logicos(t):
                     | aritmeticos logicos_1 logicos'''
     if(len(t) > 2):
         if(OperStack[-1] == '<' or OperStack[-1] == '>' or OperStack[-1] == '==' or OperStack[-1] == '!='):
-            cuadruplosOperaciones()
+            cuadruplosOperaciones(t.lineno(1))
 def p_logicos_1(t):
     '''logicos_1 : LESS 
                     | GREATER
@@ -539,7 +541,7 @@ def p_expresiones(t):
                     | logicos expresiones_1 expresiones'''
     if(len(t) > 2):
         if(OperStack[-1] == '&' or OperStack[-1] == '|'):
-            cuadruplosOperaciones()
+            cuadruplosOperaciones(t.lineno(1))
 def p_expresiones_1(t):
     '''expresiones_1 : AND 
                      | OR'''
@@ -561,7 +563,7 @@ def p_funcion_retorno(t):
         TypeStack.append(tipo)
         
     else:
-        print("La funcion", t[1], "espera", len(current_params), "parametros, pero recibio", countParams)
+        print("La funcion '{0}' espera {1} parametros, pero recibio {2} en la linea {3}".format(t[1], len(current_params), countParams, t.lineno(3)))
         raise ParserError()
 
 def p_lista_exp(t):
@@ -582,7 +584,13 @@ def p_check_param(t):
         Quad.append(quad)
         countParams = countParams + 1
     else:
-        print("Se esperaba un parametro de tipo", current_params[countParams], "pero se recibio un tipo", exp_type)
+        if(current_params[countParams] == 'i'):
+            tipo = 'int'
+        elif(current_params[countParams] == 'f'):
+            tipo = 'float'
+        else:
+            tipo = 'char'
+        print("Se esperaba un parametro de tipo '{0}' pero se recibio un tipo '{1}' en la linea {2}".format(tipo, exp_type, t.lineno(1)))
         raise ParserError()
 
 
@@ -594,7 +602,7 @@ def p_funcion_void(t):
         quad = ['GOSUB', t[1], '_', '_']
         Quad.append(quad)
     else:
-        print("La funcion", t[1], "espera", len(current_params), "parametros, pero recibio", countParams)
+        print("La funcion '{0}' espera {1} parametros, pero recibio {2} en la linea {3}".format(t[1], len(current_params), countParams, t.lineno(3)))
         raise ParserError()
     
 
@@ -607,7 +615,7 @@ def p_check_function(t):
         countParams = 0
         current_params = TablaFunciones[t[1]]['parametros']
     else:
-        print("La funcion", t[1], "no existe")
+        print("La funcion '{0}' no existe en la linea {1}".format(t[1], t.lineno(1)))
         raise ParserError()
     t[0] = t[1]
 
@@ -624,10 +632,10 @@ def p_retorno(t):
         Quad.append(quad)
     else:
         if(func_type == 'void'):
-            print("La funcion", current_function, "es de tipo", func_type, "y no acepta valores de retorno")
+            print("La funcion '{0}' es de tipo '{1}' y no acepta valores de retorno en la linea {2}".format(current_function, func_type, t.lineno(1)))
             raise ParserError()
         else:
-            print("La funcion", current_function, "espera un valor de tipo", func_type, "y el retorno es de tipo", tp)
+            print("La funcion '{0}' espera un valor de tipo '{1}' y el retorno es de tipo '{2}' en la linea {3}".format(current_function, func_type, tp, t.lineno(1)))
             raise ParserError()
 
 
@@ -697,7 +705,7 @@ def p_if_jump(t):
     '''if_jump :'''
     exp_type = TypeStack.pop()
     if(exp_type != 'bool'):
-        print("Type-mismatch")
+        print("La expresion condicional necesita ser de tipo 'bool' pero es de tipo '{0}' en la linea {1}".format(exp_type, t.lineno(0)))
         raise ParserError()
     else:
         result = OpStack.pop()
@@ -751,7 +759,7 @@ def p_iter_desde(t):
     oper = '+'
     res_type = Semantica[right_type][left_type][oper]
     if(res_type == 'err'):
-        print("Error de semantica!!!!", right_type, left_type, oper)
+        print("La variable de control debe ser de tipo 'int' pero es de tipo '{0}' en la linea {1}".format(right_type, t.lineno(1)))
         raise ParserError()
     result, size = asignarMemoria('Temporal', res_type, None)
     quad = [oper, left_op, right_op, result]
@@ -772,7 +780,7 @@ def p_comparacion_desde(t):
     oper = '>'
     res_type = Semantica[right_type][left_type][oper]
     if(res_type == 'err'):
-        print("Error de semantica!!!!", right_type, left_type, oper)
+        print("Error de Semantica en la linea {0}: la operacion '{1} {2} {3}' no esta permitida".format(t.lineno(1), right_type, oper, left_type))
         raise ParserError()
     result, size = asignarMemoria('Temporal', res_type, None)
     jump_idx = JumpStack.pop()
@@ -822,7 +830,7 @@ def p_empty(t):
 # SACADOS DE EJEMPLO CALC.PY http://www.dabeaz.com/ply/example.html
 
 def p_error(t):
-    print("Syntax error at '%s'" % t.value)
+    print("Error de syntaxis en la linea {0}: valor no esperado '{1}'".format(t.lineno, t.value) )
     raise ParserError()
 
 
@@ -1122,7 +1130,7 @@ if __name__ == '__main__':
             data = f.read()
             f.close()
             try:
-                result = parser.parse(data)
+                result = parser.parse(data, tracking=True)
             except ParserError:
                 result = "err"
             if result == "COMPILADO":
