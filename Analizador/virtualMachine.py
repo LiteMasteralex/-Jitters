@@ -216,7 +216,7 @@ def goto(left_op, right_op, res):
 
 def gotoF(left_op, right_op, res):
 	leftCont = obtenContexto(left_op)
-	if(Memoria[leftCont][left_op]):
+	if(not Memoria[leftCont][left_op]):
 		return res
 	return None
 

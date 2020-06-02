@@ -1,0 +1,11 @@
+Programa myProgram;
+var int : x, y;
+
+principal() {
+	x = 1;
+	y = 2;
+	si(x == y) entonces{
+		escribe(x, y);
+	}
+
+}

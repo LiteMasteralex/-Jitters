@@ -5,7 +5,7 @@ var int : x, y, z;
 principal() {
 	f = 'a';
 	g = 'c';
-	si(x < y) entonces{
+	si(x == y) entonces{
 		#Haz algo
 		x = y + 1;
 		escribe("Si acepta comparación de chars");
