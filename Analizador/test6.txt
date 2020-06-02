@@ -1,11 +1,14 @@
 Programa myProgram;
 var int : x, y, z;
-	char: f;
+	char: f, g;
 
 principal() {
-	si(x < y) entonces {
+	f = 'a';
+	g = 'c';
+	si(x < y) entonces{
 		#Haz algo
-		x = y;
+		x = y + 1;
+		escribe("Si acepta comparación de chars");
 	}
 	sino {
 		x = z;
@@ -14,12 +17,14 @@ principal() {
 	y = x;
 
 	mientras(x < y & x < z) haz {
-		x = z + 1;
-		z = x;
+		y = y + 1;
+		z = z + 1;
+		escribe("loop");
 	}
 
 	desde x = 0; hasta 8 hacer {
 		y = z - 1;
+		escribe(x);
 	}
 
 	y = x;

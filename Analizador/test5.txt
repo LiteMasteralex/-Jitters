@@ -1,6 +1,17 @@
 Programa myProgram;
 var int : i, k;
+	int : pi[3][3], pi2[3];
 
 principal() {
-	escribe("Hola");
+	pi2[0] = 1;
+	pi2[1] = 2;
+	pi2[2] = 3;
+
+	pi[0] = pi2;
+	pi[1] = pi2 + 1;
+	pi[2] = pi2 - 2;
+
+	desde i = 0; hasta 2 hacer {
+		escribe(pi[i][0], pi[i][1], pi[i][2]);
+	}
 }
