@@ -65,7 +65,7 @@ t_DIVIDE = r'\/'
 t_ASIGNAR = r'\='
 t_GREATER = r'>'
 t_LESS = r'<'
-t_EQUALS = r'==' #
+t_EQUALS = r'~=' #
 t_NOTEQUAL = r'!=' #
 t_AND = r'[&]' #
 t_OR = r'[|]' #

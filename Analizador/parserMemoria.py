@@ -115,7 +115,7 @@ def obtenVariable(nombre, lineNo):
     return variable
 # Esta funcion realiza la generacion de cuadruplos para las operaciones normales en las expresiones
 def cuadruplosOperaciones(lineNo):
-    operNorm = ['/', '<', '>', '!=', '==', '&', '|']
+    operNorm = ['/', '<', '>', '!=', '~=', '&', '|']
     right_op = OpStack.pop()
     right_type = TypeStack.pop()
     right_dim = OperDimStack.pop()
@@ -628,7 +628,7 @@ def p_logicos(t):
     '''logicos : aritmeticos
                     | aritmeticos logicos_1 logicos'''
     if(len(t) > 2):
-        if(OperStack[-1] == '<' or OperStack[-1] == '>' or OperStack[-1] == '==' or OperStack[-1] == '!='):
+        if(OperStack[-1] == '<' or OperStack[-1] == '>' or OperStack[-1] == '~=' or OperStack[-1] == '!='):
             cuadruplosOperaciones(t.lineno(1))
 def p_logicos_1(t):
     '''logicos_1 : LESS 
@@ -968,7 +968,7 @@ Semantica = {
             '>': 'bool', 
             '<': 'bool',
             '!=': 'bool',
-            '==': 'bool',
+            '~=': 'bool',
             '&': 'err',
             '|': 'err',
             '=': 'int'
@@ -981,7 +981,7 @@ Semantica = {
             '>': 'bool', 
             '<': 'bool',
             '!=': 'bool',
-            '==': 'bool',
+            '~=': 'bool',
             '&': 'err',
             '|': 'err',
             '=': 'err'
@@ -994,7 +994,7 @@ Semantica = {
             '>': 'err', 
             '<': 'err',
             '!=': 'err',
-            '==': 'err',
+            '~=': 'err',
             '&': 'err',
             '|': 'err',
             '=': 'err'
@@ -1007,7 +1007,7 @@ Semantica = {
             '>': 'err', 
             '<': 'err',
             '!=': 'err',
-            '==': 'err',
+            '~=': 'err',
             '&': 'err',
             '|': 'err',
             '=': 'err'
@@ -1026,7 +1026,7 @@ Semantica = {
             '>': 'bool', 
             '<': 'bool',
             '!=': 'bool',
-            '==': 'bool',
+            '~=': 'bool',
             '&': 'err',
             '|': 'err',
             '=': 'err'
@@ -1039,7 +1039,7 @@ Semantica = {
             '>': 'bool', 
             '<': 'bool',
             '!=': 'bool',
-            '==': 'bool',
+            '~=': 'bool',
             '&': 'err',
             '|': 'err',
             '=': 'float'
@@ -1052,7 +1052,7 @@ Semantica = {
             '>': 'err', 
             '<': 'err',
             '!=': 'err',
-            '==': 'err',
+            '~=': 'err',
             '&': 'err',
             '|': 'err',
             '=': 'err'
@@ -1065,7 +1065,7 @@ Semantica = {
             '>': 'err', 
             '<': 'err',
             '!=': 'err',
-            '==': 'err',
+            '~=': 'err',
             '&': 'err',
             '|': 'err',
             '=': 'err'
@@ -1084,7 +1084,7 @@ Semantica = {
             '>': 'err', 
             '<': 'err',
             '!=': 'err',
-            '==': 'err',
+            '~=': 'err',
             '&': 'err',
             '|': 'err',
             '=': 'err'
@@ -1097,7 +1097,7 @@ Semantica = {
             '>': 'err', 
             '<': 'err',
             '!=': 'err',
-            '==': 'err',
+            '~=': 'err',
             '&': 'err',
             '|': 'err',
             '=': 'err'
@@ -1110,7 +1110,7 @@ Semantica = {
             '>': 'err', 
             '<': 'err',
             '!=': 'bool',
-            '==': 'bool',
+            '~=': 'bool',
             '&': 'err',
             '|': 'err',
             '=': 'char'
@@ -1123,7 +1123,7 @@ Semantica = {
             '>': 'err', 
             '<': 'err',
             '!=': 'err',
-            '==': 'err',
+            '~=': 'err',
             '&': 'err',
             '|': 'err',
             '=': 'err'
@@ -1142,7 +1142,7 @@ Semantica = {
             '>': 'err', 
             '<': 'err',
             '!=': 'err',
-            '==': 'err',
+            '~=': 'err',
             '&': 'err',
             '|': 'err',
             '=': 'err'
@@ -1155,7 +1155,7 @@ Semantica = {
             '>': 'err', 
             '<': 'err',
             '!=': 'err',
-            '==': 'err',
+            '~=': 'err',
             '&': 'err',
             '|': 'err',
             '=': 'err'
@@ -1168,7 +1168,7 @@ Semantica = {
             '>': 'err', 
             '<': 'err',
             '!=': 'err',
-            '==': 'err',
+            '~=': 'err',
             '&': 'err',
             '|': 'err',
             '=': 'err'
@@ -1181,7 +1181,7 @@ Semantica = {
             '>': 'err', 
             '<': 'err',
             '!=': 'bool',
-            '==': 'bool',
+            '~=': 'bool',
             '&': 'bool',
             '|': 'bool',
             '=': 'bool'

@@ -2,9 +2,9 @@ Programa myProgram;
 var int : x, y;
 
 principal() {
-	x = 1;
+	x = 2;
 	y = 2;
-	si(x == y) entonces{
+	si(x ~= y) entonces{
 		escribe(x, y);
 	}
 

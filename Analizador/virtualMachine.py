@@ -312,7 +312,7 @@ def ejecutaQuadruplos():
 			'/': divi,
 			'>': mayor,
 			'<': menor,
-			'==': igual,
+			'~=': igual,
 			'!=': noIgual,
 			'&': And,
 			'|': Or,
