@@ -420,6 +420,7 @@ def p_identificadores(t):
         dimension = {
             'inf': 0,
             'sup': t[3],
+            'off': 0,
             'nxt': None
         }
     if(len(t) > 5):
@@ -429,9 +430,11 @@ def p_identificadores(t):
         dimension = {
             'inf': 0,
             'sup': t[3],
+            'off': t[6],
             'nxt': {
                 'inf': 0,
                 'sup': t[6],
+                'off': 0,
                 'nxt': None
             }
         }
@@ -448,10 +451,10 @@ def p_ident_exp(t):
     dimension = DimensionStack.pop()
     DimensionNumStack.pop()
     if(dimension != None):
-        y = dimension['sup']
+        x = dimension['sup']
         # Obtener dimension del operador
         if(dimension['nxt'] != None):
-            x = dimension['nxt']['sup']
+            y = dimension['nxt']['sup']
     OperDimStack.append([x,y])
     t[0] = t[1]['loc']
 
@@ -512,9 +515,14 @@ def p_index_dim(t):
     if(dimension['nxt'] != None):
         left_op = OpStack.pop()
         result, size = asignarMemoria('Temporal', 'int', None)
-        quad = ['dim', '1,1', '1,1', '_']
+        if(dimension['off'] in TablaConstantes):
+            off = TablaConstantes[dimension['off']]['loc']
+        else:
+            off, size = asignarMemoria('CTE', current_type, None)
+            TablaConstantes[dimension['off']] = {'loc': off, 'tipo': current_type}
+        quad = ['dim', '1,1', '1,1', '1,1']
         Quad.append(quad)
-        quad = ['*', left_op, locSup, result]
+        quad = ['*', left_op, off, result]
         Quad.append(quad)
         OpStack.append(result)
         isMatrix = True

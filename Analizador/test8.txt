@@ -1,0 +1,13 @@
+Programa myProgram;
+var int : i, k;
+	int : pi[2][3], pi2[3];
+
+principal() {
+	pi2[0] = 1;
+
+	pi[0] = pi2;
+	escribe("Res");
+	desde i = 0; hasta 1 hacer {
+		escribe(pi[i][0], pi[i][1], pi[i][2]);
+	}
+}

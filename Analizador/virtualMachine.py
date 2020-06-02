@@ -1,3 +1,5 @@
+import numpy as np
+
 Memoria = {
 	'Global': {},
 	'Local': {},
@@ -99,35 +101,53 @@ def addrCheck(left, right, res):
 			results.append(var)
 	return results
 
+def recoverMatrix(loc, x, y):
+	locCont = obtenContexto(loc)
+	result = []
+	for idxX in range(x):
+		row = []
+		for idxY in range(y):
+			row.append(Memoria[locCont][str(int(loc) + (idxX*y) + idxY)])
+		result.append(row)
+	return np.array(result)
+
+def moveToMemory(loc, arr):
+	locCont = obtenContexto(loc)
+	for x in range(len(arr)) :
+		for y in range(len(arr[x])):
+			Memoria[locCont][str(int(loc) + (x * len(arr)) + y)] = arr[x][y]
+
 class ExecuteError(Exception): pass
 
 def suma(left_op, right_op, res):
 	global  left_dim, right_dim
-	leftCont, rightCont, resCont = obtenContexto(left_op), obtenContexto(right_op), obtenContexto(res)
-	for x in range(left_dim[0]) :
-		x_offset = x * left_dim[0]
-		for y in range(left_dim[1]):
-			indiceRes = int(res) + x_offset + y
-			indiceLeft = int(left_op) + x_offset + y
-			indiceRight = int(right_op) + min(x_offset, right_dim[0] - 1) + min(y, right_dim[1] - 1)
-			Memoria[resCont][str(indiceRes)] = Memoria[leftCont][str(indiceLeft)] + Memoria[rightCont][str(indiceRight)]
+	left_mat = recoverMatrix(left_op, left_dim[0], left_dim[1])
+	right_mat = recoverMatrix(right_op, right_dim[0], right_dim[1])
+	result = left_mat + right_mat
+	moveToMemory(res, result)
 	return None
 
 def resta(left_op, right_op, res):
 	global  left_dim, right_dim
-	leftCont, rightCont, resCont = obtenContexto(left_op), obtenContexto(right_op), obtenContexto(res)
-	for x in range(left_dim[0]) :
-		x_offset = x * left_dim[0]
-		for y in range(left_dim[1]):
-			indiceRes = int(res) + x_offset + y
-			indiceLeft = int(left_op) + x_offset + y
-			indiceRight = int(right_op) + min(x_offset, right_dim[0] - 1) + min(y, right_dim[1] - 1)
-			Memoria[resCont][str(indiceRes)] = Memoria[leftCont][str(indiceLeft)] - Memoria[rightCont][str(indiceRight)]
+	left_mat = recoverMatrix(left_op, left_dim[0], left_dim[1])
+	right_mat = recoverMatrix(right_op, right_dim[0], right_dim[1])
+	result = left_mat - right_mat
+	moveToMemory(res, result)
 	return None
 
 def multi(left_op, right_op, res):
-	leftCont, rightCont, resCont = obtenContexto(left_op), obtenContexto(right_op), obtenContexto(res)
-	Memoria[resCont][res] = Memoria[leftCont][left_op] * Memoria[rightCont][right_op]
+	global  left_dim, right_dim
+	left_mat = recoverMatrix(left_op, left_dim[0], left_dim[1])
+	right_mat = recoverMatrix(right_op, right_dim[0], right_dim[1])
+	if(left_dim != [1, 1]):
+		print("Memoria", Memoria)
+		print("Left", left_mat)
+		print("Right", right_mat)
+	if(right_dim == [1, 1]):
+		result = left_mat * right_mat
+	else:
+		result = np.matmul(left_mat, right_mat)
+	moveToMemory(res, result)
 	return None
 
 def divi(left_op, right_op, res):
@@ -167,11 +187,8 @@ def Or(left_op, right_op, res):
 
 def asigna(left_op, right_op, res):
 	global  left_dim, right_dim
-	leftCont, rightCont = obtenContexto(left_op), obtenContexto(right_op)
-	for x in range(left_dim[0]) :
-		x_offset = x * left_dim[0]
-		for y in range(left_dim[1]):
-			Memoria[leftCont][str(int(left_op) + x_offset + y)] = Memoria[rightCont][str(int(right_op) + x_offset + y)]
+	right_mat = recoverMatrix(right_op, right_dim[0], right_dim[1])
+	moveToMemory(left_op, right_mat)
 	
 	return None
 
