@@ -102,13 +102,27 @@ def addrCheck(left, right, res):
 class ExecuteError(Exception): pass
 
 def suma(left_op, right_op, res):
+	global  left_dim, right_dim
 	leftCont, rightCont, resCont = obtenContexto(left_op), obtenContexto(right_op), obtenContexto(res)
-	Memoria[resCont][res] = Memoria[leftCont][left_op] + Memoria[rightCont][right_op]
+	for x in range(left_dim[0]) :
+		x_offset = x * left_dim[0]
+		for y in range(left_dim[1]):
+			indiceRes = int(res) + x_offset + y
+			indiceLeft = int(left_op) + x_offset + y
+			indiceRight = int(right_op) + min(x_offset, right_dim[0] - 1) + min(y, right_dim[1] - 1)
+			Memoria[resCont][str(indiceRes)] = Memoria[leftCont][str(indiceLeft)] + Memoria[rightCont][str(indiceRight)]
 	return None
 
 def resta(left_op, right_op, res):
+	global  left_dim, right_dim
 	leftCont, rightCont, resCont = obtenContexto(left_op), obtenContexto(right_op), obtenContexto(res)
-	Memoria[resCont][res] = Memoria[leftCont][left_op] - Memoria[rightCont][right_op]
+	for x in range(left_dim[0]) :
+		x_offset = x * left_dim[0]
+		for y in range(left_dim[1]):
+			indiceRes = int(res) + x_offset + y
+			indiceLeft = int(left_op) + x_offset + y
+			indiceRight = int(right_op) + min(x_offset, right_dim[0] - 1) + min(y, right_dim[1] - 1)
+			Memoria[resCont][str(indiceRes)] = Memoria[leftCont][str(indiceLeft)] - Memoria[rightCont][str(indiceRight)]
 	return None
 
 def multi(left_op, right_op, res):
@@ -152,8 +166,13 @@ def Or(left_op, right_op, res):
 	return None
 
 def asigna(left_op, right_op, res):
+	global  left_dim, right_dim
 	leftCont, rightCont = obtenContexto(left_op), obtenContexto(right_op)
-	Memoria[leftCont][left_op] = Memoria[rightCont][right_op]
+	for x in range(left_dim[0]) :
+		x_offset = x * left_dim[0]
+		for y in range(left_dim[1]):
+			Memoria[leftCont][str(int(left_op) + x_offset + y)] = Memoria[rightCont][str(int(right_op) + x_offset + y)]
+	
 	return None
 
 
@@ -237,6 +256,17 @@ def ver(left_op, right_op, res):
 	else:
 		raise ExecuteError('Index fuera del rango')
 
+def dim(left_op, right_op, res):
+	global left_dim, right_dim, res_dim
+	left_op = left_op.split(',')
+	left_dim = [int(left_op[0]), int(left_op[1])]
+	right_op = right_op.split(',')
+	right_dim = [int(right_op[0]), int(right_op[1])]
+	res = res.split(',')
+	if(len(res) > 1) :
+		 res_dim = [int(res[0]), int(res[1])]
+
+
 def ejecutaQuadruplos():
 	global auxQuad
 	quadNum = 0
@@ -263,7 +293,8 @@ def ejecutaQuadruplos():
 			'ENDPROC': endproc,
 			'regresa': regresa,
 			'+Addr': sumaAddr,
-			'VER': ver
+			'VER': ver,
+			'dim': dim
 		}
 		current = Quads[quadNum]
 		auxQuad = quadNum
