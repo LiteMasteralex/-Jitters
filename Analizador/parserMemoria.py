@@ -149,7 +149,34 @@ def cuadruplosOperaciones(lineNo):
         OpStack.append(result)
     quad = [oper, left_op, right_op, result]
     Quad.append(quad)
-    
+
+# Esta funcion realiza la generacion de cuadruplos para las operaciones normales en las expresiones
+def cuadruplosEspeciales(lineNo):
+    left_op = OpStack.pop()
+    left_type = TypeStack.pop()
+    left_dim = OperDimStack.pop()
+    oper = OperStack.pop()
+    res_type = Semantica[left_type][oper]
+    if(res_type == 'err'):
+        print("Error de Semantica en la linea {0}: la operacion '{1} {2}' no esta permitida".format(lineNo, left_type, oper))
+        raise ParserError()
+    # Verificar que la op se pueda completar con las dims
+    res_dim = semanticaDimension(oper, left_dim, [1, 1])
+    if(res_dim == 'err') :
+        print("Error de dimensones en la linea {0}: la operacion con dim '{1}' para '{2}' no esta permitida".format(lineNo, left_dim, oper))
+        raise ParserError()
+    # Genera el cuadruplo que define las dims a usar
+    str_left_dim = str(left_dim[0]) + ',' + str(left_dim[1])
+    str_res_dim = str(res_dim[0]) + ',' + str(res_dim[1])
+    quad = ['dim', str_left_dim, '_', str_res_dim]
+    Quad.append(quad)
+    dimension = obtenDim(res_dim[0], res_dim[1])
+    result, size = asignarMemoria('Temporal', res_type, dimension)
+    TypeStack.append(res_type)
+    OperDimStack.append(res_dim)
+    OpStack.append(result)
+    quad = [oper, left_op, '_', result]
+    Quad.append(quad)    
     
 
 def obtenDim(x, y) : 
@@ -172,6 +199,9 @@ def semanticaDimension(op, dim1, dim2):
     elif(op == '='):
         if(dim1[0] == dim2[0] and dim1[1] == dim2[1]) :
             return dim1
+    elif(op == '$'):
+        if(dim1[0] == dim1[1]):
+            return dim2
     elif(dim1 == dim2 == [1, 1]) :
         return dim1
     return ('err')
@@ -552,6 +582,10 @@ def p_terminos(t):
 def p_especiales(t):
     '''especiales : terminos
                     | terminos especiales_1'''
+    if(len(t) > 2):
+        if(OperStack[-1] == '$' or OperStack[-1] == '¡' or OperStack[-1] == '?'):
+            cuadruplosEspeciales(t.lineno(1))
+
 def p_especiales_1(t):
     '''especiales_1 : DETERMINANTE
                     | TRANSPUESTA
@@ -964,7 +998,10 @@ Semantica = {
             '&': 'err',
             '|': 'err',
             '=': 'err'
-        }
+        },
+        '$': 'float',
+        '?': 'int',
+        '¡': 'int'
     },
     #Float
     'float': {
@@ -1019,7 +1056,10 @@ Semantica = {
             '&': 'err',
             '|': 'err',
             '=': 'err'
-        }
+        },
+        '$': 'float',
+        '?': 'float',
+        '¡': 'float'
     },
     # CHAR
     'char': {
@@ -1074,7 +1114,10 @@ Semantica = {
             '&': 'err',
             '|': 'err',
             '=': 'err'
-        }
+        },
+        '$': 'err',
+        '?': 'char',
+        '¡': 'char'
     },
     # BOOL
     'bool': {
@@ -1129,7 +1172,10 @@ Semantica = {
             '&': 'bool',
             '|': 'bool',
             '=': 'bool'
-        }
+        },
+        '$': 'err',
+        '?': 'err',
+        '¡': 'err'
     }
 }
 

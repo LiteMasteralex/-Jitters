@@ -1,0 +1,18 @@
+Programa myProgram;
+var int : i, j, k;
+  float : pi[3][3], res;
+
+principal() {
+  escribe("Mat1");
+  desde i = 0; hasta 2 hacer {
+    desde k = 0; hasta 2 hacer {
+      lee(pi[i][k]);
+    }
+  }
+
+  pi[1][1] = pi[1][1] - 4.0;
+
+  res = pi$;
+  escribe("Res:", res);
+
+}

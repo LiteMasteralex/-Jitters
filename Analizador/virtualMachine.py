@@ -139,10 +139,6 @@ def multi(left_op, right_op, res):
 	global  left_dim, right_dim
 	left_mat = recoverMatrix(left_op, left_dim[0], left_dim[1])
 	right_mat = recoverMatrix(right_op, right_dim[0], right_dim[1])
-	if(left_dim != [1, 1]):
-		print("Memoria", Memoria)
-		print("Left", left_mat)
-		print("Right", right_mat)
 	if(right_dim == [1, 1]):
 		result = left_mat * right_mat
 	else:
@@ -278,11 +274,20 @@ def dim(left_op, right_op, res):
 	left_op = left_op.split(',')
 	left_dim = [int(left_op[0]), int(left_op[1])]
 	right_op = right_op.split(',')
-	right_dim = [int(right_op[0]), int(right_op[1])]
+	if(len(right_op) > 1):
+		right_dim = [int(right_op[0]), int(right_op[1])]
 	res = res.split(',')
 	if(len(res) > 1) :
 		 res_dim = [int(res[0]), int(res[1])]
+	return None
 
+def deter(left_op, right, res):
+	global  left_dim
+	left_mat = recoverMatrix(left_op, left_dim[0], left_dim[1])
+	result = np.linalg.det(left_mat)
+	moveToMemory(res, [[result]])
+	return None
+	return None
 
 def ejecutaQuadruplos():
 	global auxQuad
@@ -311,7 +316,8 @@ def ejecutaQuadruplos():
 			'regresa': regresa,
 			'+Addr': sumaAddr,
 			'VER': ver,
-			'dim': dim
+			'dim': dim,
+			'$': deter
 		}
 		current = Quads[quadNum]
 		auxQuad = quadNum
