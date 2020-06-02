@@ -8,6 +8,7 @@ TablaConstantes = {}
 
 # Quadruplos
 OpStack = []
+OperDimStack = []
 OperStack = []
 TypeStack = []
 JumpStack = []
@@ -26,6 +27,7 @@ current_function = ''
 current_params = ''
 has_return = False
 is_global = True
+isMatrix = False
 
 # Esta funcion regresa la memoria Local y Temporal a su estado original
 def clearLocales():
@@ -113,22 +115,68 @@ def obtenVariable(nombre, lineNo):
     return variable
 # Esta funcion realiza la generacion de cuadruplos para las operaciones normales en las expresiones
 def cuadruplosOperaciones(lineNo):
+    operNorm = ['/', '<', '>', '!=', '==', '&', '|']
     right_op = OpStack.pop()
     right_type = TypeStack.pop()
+    right_dim = OperDimStack.pop()
     left_op = OpStack.pop()
     left_type = TypeStack.pop()
+    left_dim = OperDimStack.pop()
     oper = OperStack.pop()
     res_type = Semantica[right_type][left_type][oper]
     if(res_type == 'err'):
         print("Error de Semantica en la linea {0}: la operacion '{1} {2} {3}' no esta permitida".format(lineNo, left_type, oper, right_type))
         raise ParserError()
-    result, size = asignarMemoria('Temporal', res_type, None)
+    # Verificar que la op se pueda completar con las dims
+    res_dim = semanticaDimension(oper, left_dim, right_dim)
+    if(res_dim == 'err') :
+        print("Error de dimensones en la linea {0}: la operacion con dim '{1}' y dim '{3}' para '{2}' no esta permitida".format(lineNo, left_dim, oper, right_dim))
+        raise ParserError()
+    # Genera el cuadruplo que define las dims a usar
+    if(oper not in operNorm) :
+        str_left_dim = str(left_dim[0]) + ',' + str(left_dim[1])
+        str_right_dim = str(right_dim[0]) + ',' + str(right_dim[1])
+        str_res_dim = str(res_dim[0]) + ',' + str(res_dim[1])
+        quad = ['dim', str_left_dim, str_right_dim, str_res_dim]
+        Quad.append(quad)
+    if(oper == '=') :
+        result = '_'
+    else :
+        dimension = obtenDim(res_dim[0], res_dim[1])
+        result, size = asignarMemoria('Temporal', res_type, dimension)
+        TypeStack.append(res_type)
+        OperDimStack.append(res_dim)
+        OpStack.append(result)
     quad = [oper, left_op, right_op, result]
     Quad.append(quad)
-    OpStack.append(result)
-    TypeStack.append(res_type)
+    
+    
 
-# Aqui iniican las reglas gramaticales que se usan en el parser
+def obtenDim(x, y) : 
+    dim1 = {'inf' : 0, 'sup': x, 'nxt': None}
+    dim2 = {'inf' : 0, 'sup': y, 'nxt': dim1}
+    return dim2
+    
+
+def semanticaDimension(op, dim1, dim2):
+    if(op == '+' or op == '-'):
+        if(dim1[0] == dim2[0] and dim1[1] == dim2[1]) :
+            return dim1
+        elif(dim2[0] == dim2[1] == 1) :
+            return dim1
+    elif(op == '*'):
+        if(dim1[1] == dim2[0]) :
+            return [dim1[0], dim2[1]]
+        elif(dim2[0] == dim2[1] == 1):
+            return dim1
+    elif(op == '='):
+        if(dim1[0] == dim2[0] and dim1[1] == dim2[1]) :
+            return dim1
+    elif(dim1 == dim2 == [1, 1]) :
+        return dim1
+    return ('err')
+
+# Aqui inician las reglas gramaticales que se usan en el parser
 # PROGRAMA
 def p_programa(t):
     '''programa : PROGRAMA define_global SEMICOLON variables define_var_global funciones PRINCIPAL resolve_jump LPAREN RPAREN LCORCHETE estatuto RCORCHETE'''
@@ -255,7 +303,7 @@ def p_define_funct(t):
             TablaFunciones[t[2]]['loc'] = variable['loc']
 
     else:
-        print("La funcion '{0}' ya esta defnida en la linea {1}".format(t[2], t.lineno(2)))
+        print("La funcion '{0}' ya esta definida en la linea {1}".format(t[2], t.lineno(2)))
         raise ParserError()
 
 def p_clear_vars(t):
@@ -321,7 +369,7 @@ def p_def_parameters(t):
     '''def_parameters : tipo COLON ID'''
     global TablaVariables, TablaFunciones, current_function
     if t[3] in TablaVariables:
-        print("La variable '{0}' ya esta defnida en la linea {1}".format(t[3], t.lineno(3)))
+        print("La variable '{0}' ya esta definida en la linea {1}".format(t[3], t.lineno(3)))
         raise ParserError()
     else:
         loc, size = asignarMemoria('Local', t[1], None)
@@ -344,16 +392,8 @@ def p_estatuto_1(t):
 #ASIGNACION
 def p_asignacion(t):
     '''asignacion : ident_exp ASIGNAR expresiones SEMICOLON'''
-    right_op = OpStack.pop()
-    right_type = TypeStack.pop()
-    left_op = OpStack.pop()
-    left_type = TypeStack.pop()
-    res_type = Semantica[left_type][right_type]['=']
-    if(res_type == 'err'):
-        print("Error de Semantica en la linea {0}: la operacion '{1} = {2}' no esta permitida".format(t.lineno(2), left_type, right_type))
-        raise ParserError()
-    quad = ['=', left_op, right_op, '_']
-    Quad.append(quad)
+    OperStack.append(t[2])
+    cuadruplosOperaciones(t.lineno(1))
     t[0] = t[1]
 
 def p_check_id(t):
@@ -401,22 +441,31 @@ def p_ident_exp(t):
     '''ident_exp : matriz
                     | arreglo
                     | check_id'''
-    name = DimenIdentStack.pop()
+    global isMatrix
+    x = 1
+    y = 1
+    DimenIdentStack.pop()
     dimension = DimensionStack.pop()
-    num_dim = DimensionNumStack.pop()
+    DimensionNumStack.pop()
     if(dimension != None):
-        print("La variable '{0}' no es de {1} dimensiones en la linea {2}".format(name, num_dim, t.lineno(1)))
-        raise ParserError()
+        y = dimension['sup']
+        # Obtener dimension del operador
+        if(dimension['nxt'] != None):
+            x = dimension['nxt']['sup']
+    OperDimStack.append([x,y])
     t[0] = t[1]['loc']
 
 def p_matriz(t):
-    '''matriz : check_id check_dim LBRACKET expresiones index_dim RBRACKET check_dim LBRACKET expresiones index_dim RBRACKET off_set_dir'''
+    '''matriz :  check_id es_dim check_dim LBRACKET expresiones index_dim RBRACKET check_dim  LBRACKET expresiones index_dim RBRACKET off_set_dir'''
     t[0] = t[1]
 
 def p_arreglo(t):
-    '''arreglo : check_id check_dim LBRACKET expresiones index_dim RBRACKET off_set_dir'''
+    '''arreglo : check_id es_dim check_dim LBRACKET expresiones index_dim RBRACKET off_set_dir'''
     t[0] = t[1]
 
+def p_es_dim(t):
+    '''es_dim : '''
+    OpStack.pop()
 
 def p_off_set_dir(t):
     '''off_set_dir : '''
@@ -441,7 +490,7 @@ def p_check_dim(t):
 
 def p_index_dim(t):
     '''index_dim :'''
-    global DimensionStack, DimensionNumStack
+    global DimensionStack, DimensionNumStack, isMatrix
     dimension = DimensionStack[-1]
     num_dim = DimensionNumStack[-1]
     tipo = TypeStack.pop()
@@ -463,15 +512,21 @@ def p_index_dim(t):
     if(dimension['nxt'] != None):
         left_op = OpStack.pop()
         result, size = asignarMemoria('Temporal', 'int', None)
+        quad = ['dim', '1,1', '1,1', '_']
+        Quad.append(quad)
         quad = ['*', left_op, locSup, result]
         Quad.append(quad)
         OpStack.append(result)
-    else:
+        isMatrix = True
+    elif(isMatrix):
         aux2, aux1 = OpStack.pop(), OpStack.pop()
         result, size = asignarMemoria('Temporal', 'int', None)
+        quad = ['dim', '1,1', '1,1', '1,1']
+        Quad.append(quad)
         quad = ['+', aux1, aux2, result]
         Quad.append(quad)
         OpStack.append(result)
+        isMatrix = False
     DimensionStack[-1] = dimension['nxt']
     DimensionNumStack[-1] = num_dim + 1
 
@@ -557,6 +612,8 @@ def p_funcion_retorno(t):
         tipo = TablaFunciones[t[1]]['tipo']
         loc = TablaFunciones[t[1]]['loc']
         locTemp, size = asignarMemoria('Temporal', tipo, None)
+        quad = ['dim', '1,1', '1,1', '_']
+        quad.append(quad)
         quad = ['=', locTemp, loc, '_']
         Quad.append(quad)
         OpStack.append(locTemp)
@@ -744,6 +801,10 @@ def p_repeticion_no_cond(t):
 
 def p_iter_desde(t):
     '''iter_desde : asignacion'''
+    if(Quad[-2][1] != '1,1') :
+        print(Quad[-2])
+        print("Error de iteracion en linea {0}: solo se puede iterar sobre valores no dimensionados".format(t.lineno(1)))
+        raise ParserError()
     quad = ['Goto', '_', '_', '____']
     Quad.append(quad)
     JumpStack.append(len(Quad) - 1)
@@ -762,10 +823,14 @@ def p_iter_desde(t):
         print("La variable de control debe ser de tipo 'int' pero es de tipo '{0}' en la linea {1}".format(right_type, t.lineno(1)))
         raise ParserError()
     result, size = asignarMemoria('Temporal', res_type, None)
-    quad = [oper, left_op, right_op, result]
     #Jump
     ForStack.append(len(Quad))
+    quad = ['dim', '1,1', '1,1', '1,1']
     Quad.append(quad)
+    quad = [oper, left_op, right_op, result]
+    Quad.append(quad)
+    quad = ['dim', '1,1', '1,1', '_']
+    Quad.append(quad) 
     quad = ['=', t[1], result, '_']
     Quad.append(quad)
     OpStack.append(t[1])
@@ -820,6 +885,7 @@ def p_var_cte(t):
         TablaConstantes[t[1]] = {'loc': loc, 'tipo': current_type}
     OpStack.append(loc)
     TypeStack.append(current_type)
+    OperDimStack.append([1,1])
 
 # EMPTY
 def p_empty(t):
