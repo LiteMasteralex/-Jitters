@@ -281,13 +281,25 @@ def dim(left_op, right_op, res):
 		 res_dim = [int(res[0]), int(res[1])]
 	return None
 
-def deter(left_op, right, res):
+def deter(left_op, right_op, res):
 	global  left_dim
 	left_mat = recoverMatrix(left_op, left_dim[0], left_dim[1])
 	result = np.linalg.det(left_mat)
 	moveToMemory(res, [[result]])
 	return None
+
+def inverse(left_op, right_op, res):
+	global  left_dim
+	left_mat = recoverMatrix(left_op, left_dim[0], left_dim[1])
+	result = np.linalg.inv(left_mat)
+	moveToMemory(res, result)
 	return None
+
+def trans(left_op, right_op, res):
+	global left_dim
+	left_mat = recoverMatrix(left_op, left_dim[0], left_dim[1])
+	result = left_mat.transpose()
+	moveToMemory(res, result)
 
 def ejecutaQuadruplos():
 	global auxQuad
@@ -317,7 +329,9 @@ def ejecutaQuadruplos():
 			'+Addr': sumaAddr,
 			'VER': ver,
 			'dim': dim,
-			'$': deter
+			'$': deter,
+			'?': inverse,
+			'¡': trans
 		}
 		current = Quads[quadNum]
 		auxQuad = quadNum

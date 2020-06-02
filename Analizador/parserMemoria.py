@@ -202,6 +202,11 @@ def semanticaDimension(op, dim1, dim2):
     elif(op == '$'):
         if(dim1[0] == dim1[1]):
             return dim2
+    elif(op == '?'):
+        if(dim1[0] == dim1[1]):
+            return dim1
+    elif(op == '¡'):
+        return [dim1[1], dim1[0]]
     elif(dim1 == dim2 == [1, 1]) :
         return dim1
     return ('err')
@@ -1246,7 +1251,7 @@ if __name__ == '__main__':
     if len(sys.argv) == 2:
         file = str(sys.argv[1])
         try:
-            f = open(file, 'r')
+            f = open(file, 'r', encoding='utf-8')
             data = f.read()
             f.close()
             try:
