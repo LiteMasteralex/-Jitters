@@ -759,6 +759,10 @@ def p_valor_lectura(t):
     if(t[1] != 0):
         TypeStack.pop()
         exp = OpStack.pop()
+        dim = OperDimStack.pop()
+        if(dim != [1, 1]):
+            print("No se pueden leer variables dimensionadas en la linea {0}".format(t.lineno(1)))
+            raise ParserError
         quad = ['LEE', exp , '_', '_']
         Quad.append(quad)
 
@@ -780,6 +784,10 @@ def p_imprimir(t):
                   | expresiones'''
     if(t[1] == None):
         exp = OpStack.pop()
+        dim = OperDimStack.pop()
+        if(dim != [1, 1]):
+            print("No se puede imprimir variables dimensionadas en la linea {0}".format(t.lineno(1)))
+            raise ParserError
         TypeStack.pop()
         quad = ['ESCRITURA', exp , '_', '_']
         Quad.append(quad)
