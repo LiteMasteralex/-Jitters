@@ -8,6 +8,7 @@ TablaConstantes = {}
 
 # Quadruplos
 OpStack = []
+OperDimStack = []
 OperStack = []
 TypeStack = []
 JumpStack = []
@@ -17,25 +18,29 @@ DimenIdentStack = []
 DimensionStack = []
 DimensionNumStack = []
 
-#Memoria
-countParams = 0
-
 # Auxiliares
+countParams = 0
 current_type = 'void'
 current_function = ''
 current_params = ''
 has_return = False
 is_global = True
+isMatrix = False
 
 # Esta funcion regresa la memoria Local y Temporal a su estado original
+# Parametros: None
+# Returns: None
+# Usage: Est funcion se usa cuando se termina una funcion y se necesita reiniciar el contexto
 def clearLocales():
     global Memoria
+    # Reinica el valor de las Locales
     Memoria['Local'] = {
         'int': 4000,
         'float': 5000,
         'char': 6000
     }
 
+    #Reinicia el valor de las Temporales
     Memoria['Temporal'] = {
         'int': 7000,
         'float': 8000,
@@ -45,54 +50,87 @@ def clearLocales():
     }
 
 
-# Esta funcion limpia todas las tablas y constantes que se usaron para asegurar que no haya nada resiudal si se quiere seguir compliando
+# Esta funcion limpia todas las tablas y constantes que se usaron
+# Parametros: None
+# Returns: None
+# Usage: Esta funcion se usa cuando se termino de compilar y se quiere eliminar todos los contextos
 def clearEverything():
-    # Tablas
+    # Limpia de las Tablas
     global TablaFunciones, TablaVariables, TablaGlobales
     TablaFunciones = {}
     TablaVariables = {}
     TablaGlobales = {}
 
-    # Quadruplos
+    # Limpia de los Stacks
     OpStack.clear()
+    OperDimStack.clear()
     OperStack.clear()
     TypeStack.clear()
+    JumpStack.clear()
+    ForStack.clear()
+    Quad.clear()
+    DimenIdentStack.clear()
+    DimensionStack.clear()
+    DimensionNumStack.clear()
     Quad.clear()
 
-    #Memoria
+    # Limpia de Memoria
     global iGlobales, fGlobales, cGlobales, bGlobales
     iGlobales = 1000
     fGlobales = 2000
     cGlobales = 3000
     bGlobales = 4000
 
+    # Se llama a la funcion que limpia la meoria del contexto
     clearLocales()
 
-    # Auxiliares
-    global current_type
+    # Limpia de auxiliares
+    global current_type, countParams, current_function, current_params, has_return, is_global, isMatrix
+    countParams = 0
     current_type = 'void'
+    current_function = ''
+    current_params = ''
+    has_return = False
+    is_global = True
+    isMatrix = False
 
 # Esta funcion regresa el numero de variables de un tipo segun el contexto
+# Parametros: contexto : str, tipo : str
+# Returns: int : numero de memoria utilizada en el contexto
+# Usage: Esta funcion se utiliza cuando se requiere contabilizar los espacios de memoria que se utilizaron
 def countMemoria(contexto, tipo):
+    # Regresa : # de memoria utilizada - (Limite de meoria para - offset de inicio de memoria))
     return Memoria[contexto][tipo] - (LimiteMemoria[contexto][tipo] - 1000)
 
 # Esta funcion le asigna a una variable la direccion donde empieza su memoria y el tamaño de esta memoria
+# Paramentros: contexto : str, tipo : str, dimension : dict
+# Returns: int : ubicacion en memoria que se le asigno, int : tamaño que utilizo en memoria
+# Usage: Esta funcion es llamada cada vez que se requiere separa espacio para un variable
 def asignarMemoria(contexto, tipo, dimension):
     global Memoria, LimiteMemoria
+    # Obten la direccion base en memoria para la nueva variable
     ubicacion = Memoria[contexto][tipo]
     size = 1
+    # Mientras tenga dimesniones en el dicionario
     while(dimension != None):
+        # Obten el tamaño de la dimension y obten la siguiente dimension
         size = size * dimension['sup']
         dimension = dimension['nxt']
+    # Mueve el contador de memoria
     Memoria[contexto][tipo] = ubicacion + size
+    # Valida que todavia haya espacio en memoria para que no afecte otros contexots
     if(ubicacion >= LimiteMemoria[contexto][tipo]):
         print("No hay mas espacios de tipo", tipo) #Este error no deberia de causarse en compliacion solo nos sirve a nosotros para definir los limites de memoria de cada tipo
         raise ParserError()
     return ubicacion, size
 
 # Esta funcion regresa una nueva variable con la estructura completa que se necesita para agregarla a la Tabla de funciones
+# Parametros: nombre : str, dimension : dict
+# Returns: dict : {name : str, loc : int, nxt : dict, size : int}
+# Usage: esta fucnion es la interfaze para crear varaibles y se usa cuando se requier una variable el formata que va en Tabla de variables
 def defineVariable(nombre, dimension):
     global is_global, current_type
+    # Si es global se necesita asignar memoria global
     if(is_global):
         memoria, size = asignarMemoria('Global', current_type, dimension)
         return {'name': nombre, 'loc': memoria, 'nxt': dimension, 'size': size}
@@ -101,34 +139,153 @@ def defineVariable(nombre, dimension):
         return {'name': nombre, 'loc': memoria, 'nxt': dimension, 'size': size}
 
 # Busca la variable en las definiciones actuales y regresa su valor
+# Parametros: nombre : str, lineNo : int
+# Return: dict : {name : str, loc : int, nxt : dict, size : int}
+# Esta funcion se utiliza cuando se quiere consegui una variable de las definiciones de las Tablas
 def obtenVariable(nombre, lineNo):
     variable = ''
+    # Busca si existe en la las variables locales
     if nombre in TablaVariables:
         variable = TablaVariables[nombre]
+    #Busca si existe en las variables globales
     elif nombre in TablaGlobales:
         variable = TablaGlobales[nombre]
     else:
         print("La variable '{0}' no esta definida en la linea {1}".format(nombre, lineNo))
         raise ParserError()
+    # Se regresa la variable con el formato para la Tabla de Variables
     return variable
+
 # Esta funcion realiza la generacion de cuadruplos para las operaciones normales en las expresiones
+# Parametros: lineNo : int
+# Returns: None
+# Usage: Esta funcion se utiliza cada vez que se requiera hacer los cuadruplos de operaciones dentro de expresiones
 def cuadruplosOperaciones(lineNo):
+    # Casos especiales cuando no se necesita dimensiones
+    operNorm = ['/', '<', '>', '!=', '~=', '&', '|']
+    # Obten los operadores y sus diemnsiones
     right_op = OpStack.pop()
     right_type = TypeStack.pop()
+    right_dim = OperDimStack.pop()
     left_op = OpStack.pop()
     left_type = TypeStack.pop()
+    left_dim = OperDimStack.pop()
     oper = OperStack.pop()
+    # Verifica la sematica con los tipos
     res_type = Semantica[right_type][left_type][oper]
     if(res_type == 'err'):
         print("Error de Semantica en la linea {0}: la operacion '{1} {2} {3}' no esta permitida".format(lineNo, left_type, oper, right_type))
         raise ParserError()
-    result, size = asignarMemoria('Temporal', res_type, None)
+    # Verificar la semantica con las dimesniones
+    res_dim = semanticaDimension(oper, left_dim, right_dim)
+    if(res_dim == 'err') :
+        print("Error de dimensones en la linea {0}: la operacion con dim '{1}' y dim '{3}' para '{2}' no esta permitida".format(lineNo, left_dim, oper, right_dim))
+        raise ParserError()
+    # Genera el cuadruplo que define las dimesniones que la maquina virtual debe de usar
+    if(oper not in operNorm) :
+        str_left_dim = str(left_dim[0]) + ',' + str(left_dim[1])
+        str_right_dim = str(right_dim[0]) + ',' + str(right_dim[1])
+        str_res_dim = str(res_dim[0]) + ',' + str(res_dim[1])
+        quad = ['dim', str_left_dim, str_right_dim, str_res_dim]
+        Quad.append(quad)
+    # Cuando sea una asignacion el ultimo elemento del cuadruplo debe estar vacio
+    if(oper == '=') :
+        result = '_'
+    else :
+        # Cuando no es una asignacion el resultado de la expresion se vuelve a agregar a los stacks
+        dimension = obtenDim(res_dim[0], res_dim[1])
+        result, size = asignarMemoria('Temporal', res_type, dimension)
+        TypeStack.append(res_type)
+        OperDimStack.append(res_dim)
+        OpStack.append(result)
+    # Genera el cuadruplo y agregalo
     quad = [oper, left_op, right_op, result]
     Quad.append(quad)
-    OpStack.append(result)
-    TypeStack.append(res_type)
 
-# Aqui iniican las reglas gramaticales que se usan en el parser
+# Esta funcion realiza la generacion de cuadruplos para las operaciones especiales en las expresiones
+# Parametros: lineNo : int
+# Returns: None
+# Usage: Esta funcion se utiliza cada vez que se requiera hacer los cuadruplos de operaciones especiales dentro de expresiones
+def cuadruplosEspeciales(lineNo):
+    # Obten los operadores y sus diemnsiones
+    left_op = OpStack.pop()
+    left_type = TypeStack.pop()
+    left_dim = OperDimStack.pop()
+    oper = OperStack.pop()
+    res_type = Semantica[left_type][oper]
+    # Verifica la sematica con los tipos
+    if(res_type == 'err'):
+        print("Error de Semantica en la linea {0}: la operacion '{1} {2}' no esta permitida".format(lineNo, left_type, oper))
+        raise ParserError()
+    # Verificar la semantica con las dimesniones
+    res_dim = semanticaDimension(oper, left_dim, [1, 1])
+    if(res_dim == 'err') :
+        print("Error de dimensones en la linea {0}: la operacion con dim '{1}' para '{2}' no esta permitida".format(lineNo, left_dim, oper))
+        raise ParserError()
+    # Genera el cuadruplo que define las dimesniones que la maquina virtual debe de usar
+    str_left_dim = str(left_dim[0]) + ',' + str(left_dim[1])
+    str_res_dim = str(res_dim[0]) + ',' + str(res_dim[1])
+    quad = ['dim', str_left_dim, '_', str_res_dim]
+    Quad.append(quad)
+    # El resultado de la expresion se vuelve a agregar a los stacks
+    dimension = obtenDim(res_dim[0], res_dim[1])
+    result, size = asignarMemoria('Temporal', res_type, dimension)
+    TypeStack.append(res_type)
+    OperDimStack.append(res_dim)
+    OpStack.append(result)
+    # Genera el cuadruplo y agregalo
+    quad = [oper, left_op, '_', result]
+    Quad.append(quad)    
+    
+# Esta funcion genera una dicionaria de dimension con el formato que se necesita para usarlo como atributo de una variable
+# Paramentros: x : int, y : int
+# Returns: dict : {inf : int, sup : int, nxt : dict}
+# Usage: Esta funcion se usa mas que nada cuando se necesitan hacer operaciones a expresiones que no se hacen por medio de la funcion de cuadriplosOperaciones()
+def obtenDim(x, y) : 
+    dim1 = {'inf' : 0, 'sup': x, 'nxt': None}
+    dim2 = {'inf' : 0, 'sup': y, 'nxt': dim1}
+    return dim2
+    
+# Esta ffuncion verifica que la operacion dada pueda ser realizada con las dimensiones y regrsa la dimension resultante
+# Parametros: op : str, dim1 : list, dim2 : list
+# Returns: list : [int : dimesnion en x, int : dimension en y]
+# Usage: Esta funcion se llama cada vez ue se requiera verificar la semantica de dimensiones cuando se general cuadruplos de operaciones
+def semanticaDimension(op, dim1, dim2):
+    if(op == '+' or op == '-'):
+        # Si las dimensiones son iguales la suma se permite
+        if(dim1[0] == dim2[0] and dim1[1] == dim2[1]) :
+            return dim1
+        # El caso especial donde se suma un elemetno a todos los elemetnos de una matriz
+        elif(dim2[0] == dim2[1] == 1) :
+            return dim1
+    elif(op == '*'):
+        # Para la multiplicacion de matriz se requiere que y1 == x1
+        if(dim1[1] == dim2[0]) :
+            return [dim1[0], dim2[1]]
+        # Para el caso especial donde se multiplica un elemento por todos los elementos de una matriz
+        elif(dim2[0] == dim2[1] == 1):
+            return dim1
+    elif(op == '='):
+        # La asignacion solo funciona si las dimensiones son iguales
+        if(dim1[0] == dim2[0] and dim1[1] == dim2[1]) :
+            return dim1
+    elif(op == '$'):
+        # La determinante solo acepta matrizes cuadradas
+        if(dim1[0] == dim1[1]):
+            return dim2
+    elif(op == '?'):
+        # La inversa solo acepta marizes cuadradas
+        if(dim1[0] == dim1[1]):
+            return dim1
+    elif(op == '¡'):
+        # La transpuesta no tiene restricciones pero las dimensiones se invierten
+        return [dim1[1], dim1[0]]
+    # Default Case para cuando son variables no dimensionadas
+    elif(dim1 == dim2 == [1, 1]) :
+        return dim1
+    return ('err')
+
+# Aqui inician las reglas gramaticales que se usan en el parser
 # PROGRAMA
 def p_programa(t):
     '''programa : PROGRAMA define_global SEMICOLON variables define_var_global funciones PRINCIPAL resolve_jump LPAREN RPAREN LCORCHETE estatuto RCORCHETE'''
@@ -255,7 +412,7 @@ def p_define_funct(t):
             TablaFunciones[t[2]]['loc'] = variable['loc']
 
     else:
-        print("La funcion '{0}' ya esta defnida en la linea {1}".format(t[2], t.lineno(2)))
+        print("La funcion '{0}' ya esta definida en la linea {1}".format(t[2], t.lineno(2)))
         raise ParserError()
 
 def p_clear_vars(t):
@@ -321,7 +478,7 @@ def p_def_parameters(t):
     '''def_parameters : tipo COLON ID'''
     global TablaVariables, TablaFunciones, current_function
     if t[3] in TablaVariables:
-        print("La variable '{0}' ya esta defnida en la linea {1}".format(t[3], t.lineno(3)))
+        print("La variable '{0}' ya esta definida en la linea {1}".format(t[3], t.lineno(3)))
         raise ParserError()
     else:
         loc, size = asignarMemoria('Local', t[1], None)
@@ -344,16 +501,8 @@ def p_estatuto_1(t):
 #ASIGNACION
 def p_asignacion(t):
     '''asignacion : ident_exp ASIGNAR expresiones SEMICOLON'''
-    right_op = OpStack.pop()
-    right_type = TypeStack.pop()
-    left_op = OpStack.pop()
-    left_type = TypeStack.pop()
-    res_type = Semantica[left_type][right_type]['=']
-    if(res_type == 'err'):
-        print("Error de Semantica en la linea {0}: la operacion '{1} = {2}' no esta permitida".format(t.lineno(2), left_type, right_type))
-        raise ParserError()
-    quad = ['=', left_op, right_op, '_']
-    Quad.append(quad)
+    OperStack.append(t[2])
+    cuadruplosOperaciones(t.lineno(1))
     t[0] = t[1]
 
 def p_check_id(t):
@@ -380,6 +529,7 @@ def p_identificadores(t):
         dimension = {
             'inf': 0,
             'sup': t[3],
+            'off': 0,
             'nxt': None
         }
     if(len(t) > 5):
@@ -389,9 +539,11 @@ def p_identificadores(t):
         dimension = {
             'inf': 0,
             'sup': t[3],
+            'off': t[6],
             'nxt': {
                 'inf': 0,
                 'sup': t[6],
+                'off': 0,
                 'nxt': None
             }
         }
@@ -401,22 +553,31 @@ def p_ident_exp(t):
     '''ident_exp : matriz
                     | arreglo
                     | check_id'''
-    name = DimenIdentStack.pop()
+    global isMatrix
+    x = 1
+    y = 1
+    DimenIdentStack.pop()
     dimension = DimensionStack.pop()
-    num_dim = DimensionNumStack.pop()
+    DimensionNumStack.pop()
     if(dimension != None):
-        print("La variable '{0}' no es de {1} dimensiones en la linea {2}".format(name, num_dim, t.lineno(1)))
-        raise ParserError()
+        x = dimension['sup']
+        # Obtener dimension del operador
+        if(dimension['nxt'] != None):
+            y = dimension['nxt']['sup']
+    OperDimStack.append([x,y])
     t[0] = t[1]['loc']
 
 def p_matriz(t):
-    '''matriz : check_id check_dim LBRACKET expresiones index_dim RBRACKET check_dim LBRACKET expresiones index_dim RBRACKET off_set_dir'''
+    '''matriz :  check_id es_dim check_dim LBRACKET expresiones index_dim RBRACKET check_dim  LBRACKET expresiones index_dim RBRACKET off_set_dir'''
     t[0] = t[1]
 
 def p_arreglo(t):
-    '''arreglo : check_id check_dim LBRACKET expresiones index_dim RBRACKET off_set_dir'''
+    '''arreglo : check_id es_dim check_dim LBRACKET expresiones index_dim RBRACKET off_set_dir'''
     t[0] = t[1]
 
+def p_es_dim(t):
+    '''es_dim : '''
+    OpStack.pop()
 
 def p_off_set_dir(t):
     '''off_set_dir : '''
@@ -441,7 +602,7 @@ def p_check_dim(t):
 
 def p_index_dim(t):
     '''index_dim :'''
-    global DimensionStack, DimensionNumStack
+    global DimensionStack, DimensionNumStack, isMatrix
     dimension = DimensionStack[-1]
     num_dim = DimensionNumStack[-1]
     tipo = TypeStack.pop()
@@ -463,15 +624,26 @@ def p_index_dim(t):
     if(dimension['nxt'] != None):
         left_op = OpStack.pop()
         result, size = asignarMemoria('Temporal', 'int', None)
-        quad = ['*', left_op, locSup, result]
+        if(dimension['off'] in TablaConstantes):
+            off = TablaConstantes[dimension['off']]['loc']
+        else:
+            off, size = asignarMemoria('CTE', current_type, None)
+            TablaConstantes[dimension['off']] = {'loc': off, 'tipo': current_type}
+        quad = ['dim', '1,1', '1,1', '1,1']
+        Quad.append(quad)
+        quad = ['*', left_op, off, result]
         Quad.append(quad)
         OpStack.append(result)
-    else:
+        isMatrix = True
+    elif(isMatrix):
         aux2, aux1 = OpStack.pop(), OpStack.pop()
         result, size = asignarMemoria('Temporal', 'int', None)
+        quad = ['dim', '1,1', '1,1', '1,1']
+        Quad.append(quad)
         quad = ['+', aux1, aux2, result]
         Quad.append(quad)
         OpStack.append(result)
+        isMatrix = False
     DimensionStack[-1] = dimension['nxt']
     DimensionNumStack[-1] = num_dim + 1
 
@@ -489,6 +661,10 @@ def p_terminos(t):
 def p_especiales(t):
     '''especiales : terminos
                     | terminos especiales_1'''
+    if(len(t) > 2):
+        if(OperStack[-1] == '$' or OperStack[-1] == '¡' or OperStack[-1] == '?'):
+            cuadruplosEspeciales(t.lineno(1))
+
 def p_especiales_1(t):
     '''especiales_1 : DETERMINANTE
                     | TRANSPUESTA
@@ -526,7 +702,7 @@ def p_logicos(t):
     '''logicos : aritmeticos
                     | aritmeticos logicos_1 logicos'''
     if(len(t) > 2):
-        if(OperStack[-1] == '<' or OperStack[-1] == '>' or OperStack[-1] == '==' or OperStack[-1] == '!='):
+        if(OperStack[-1] == '<' or OperStack[-1] == '>' or OperStack[-1] == '~=' or OperStack[-1] == '!='):
             cuadruplosOperaciones(t.lineno(1))
 def p_logicos_1(t):
     '''logicos_1 : LESS 
@@ -557,6 +733,8 @@ def p_funcion_retorno(t):
         tipo = TablaFunciones[t[1]]['tipo']
         loc = TablaFunciones[t[1]]['loc']
         locTemp, size = asignarMemoria('Temporal', tipo, None)
+        quad = ['dim', '1,1', '1,1', '_']
+        Quad.append(quad)
         quad = ['=', locTemp, loc, '_']
         Quad.append(quad)
         OpStack.append(locTemp)
@@ -655,6 +833,10 @@ def p_valor_lectura(t):
     if(t[1] != 0):
         TypeStack.pop()
         exp = OpStack.pop()
+        dim = OperDimStack.pop()
+        if(dim != [1, 1]):
+            print("No se pueden leer variables dimensionadas en la linea {0}".format(t.lineno(1)))
+            raise ParserError
         quad = ['LEE', exp , '_', '_']
         Quad.append(quad)
 
@@ -676,6 +858,10 @@ def p_imprimir(t):
                   | expresiones'''
     if(t[1] == None):
         exp = OpStack.pop()
+        dim = OperDimStack.pop()
+        if(dim != [1, 1]):
+            print("No se puede imprimir variables dimensionadas en la linea {0}".format(t.lineno(1)))
+            raise ParserError
         TypeStack.pop()
         quad = ['ESCRITURA', exp , '_', '_']
         Quad.append(quad)
@@ -744,6 +930,10 @@ def p_repeticion_no_cond(t):
 
 def p_iter_desde(t):
     '''iter_desde : asignacion'''
+    if(Quad[-2][1] != '1,1') :
+        print(Quad[-2])
+        print("Error de iteracion en linea {0}: solo se puede iterar sobre valores no dimensionados".format(t.lineno(1)))
+        raise ParserError()
     quad = ['Goto', '_', '_', '____']
     Quad.append(quad)
     JumpStack.append(len(Quad) - 1)
@@ -762,10 +952,14 @@ def p_iter_desde(t):
         print("La variable de control debe ser de tipo 'int' pero es de tipo '{0}' en la linea {1}".format(right_type, t.lineno(1)))
         raise ParserError()
     result, size = asignarMemoria('Temporal', res_type, None)
-    quad = [oper, left_op, right_op, result]
     #Jump
     ForStack.append(len(Quad))
+    quad = ['dim', '1,1', '1,1', '1,1']
     Quad.append(quad)
+    quad = [oper, left_op, right_op, result]
+    Quad.append(quad)
+    quad = ['dim', '1,1', '1,1', '_']
+    Quad.append(quad) 
     quad = ['=', t[1], result, '_']
     Quad.append(quad)
     OpStack.append(t[1])
@@ -777,7 +971,7 @@ def p_comparacion_desde(t):
     right_type = TypeStack.pop()
     left_op = OpStack.pop()
     left_type = TypeStack.pop()
-    oper = '>'
+    oper = '<'
     res_type = Semantica[right_type][left_type][oper]
     if(res_type == 'err'):
         print("Error de Semantica en la linea {0}: la operacion '{1} {2} {3}' no esta permitida".format(t.lineno(1), right_type, oper, left_type))
@@ -820,6 +1014,7 @@ def p_var_cte(t):
         TablaConstantes[t[1]] = {'loc': loc, 'tipo': current_type}
     OpStack.append(loc)
     TypeStack.append(current_type)
+    OperDimStack.append([1,1])
 
 # EMPTY
 def p_empty(t):
@@ -847,7 +1042,7 @@ Semantica = {
             '>': 'bool', 
             '<': 'bool',
             '!=': 'bool',
-            '==': 'bool',
+            '~=': 'bool',
             '&': 'err',
             '|': 'err',
             '=': 'int'
@@ -860,7 +1055,7 @@ Semantica = {
             '>': 'bool', 
             '<': 'bool',
             '!=': 'bool',
-            '==': 'bool',
+            '~=': 'bool',
             '&': 'err',
             '|': 'err',
             '=': 'err'
@@ -873,7 +1068,7 @@ Semantica = {
             '>': 'err', 
             '<': 'err',
             '!=': 'err',
-            '==': 'err',
+            '~=': 'err',
             '&': 'err',
             '|': 'err',
             '=': 'err'
@@ -886,11 +1081,14 @@ Semantica = {
             '>': 'err', 
             '<': 'err',
             '!=': 'err',
-            '==': 'err',
+            '~=': 'err',
             '&': 'err',
             '|': 'err',
             '=': 'err'
-        }
+        },
+        '$': 'float',
+        '?': 'int',
+        '¡': 'float'
     },
     #Float
     'float': {
@@ -902,7 +1100,7 @@ Semantica = {
             '>': 'bool', 
             '<': 'bool',
             '!=': 'bool',
-            '==': 'bool',
+            '~=': 'bool',
             '&': 'err',
             '|': 'err',
             '=': 'err'
@@ -915,7 +1113,7 @@ Semantica = {
             '>': 'bool', 
             '<': 'bool',
             '!=': 'bool',
-            '==': 'bool',
+            '~=': 'bool',
             '&': 'err',
             '|': 'err',
             '=': 'float'
@@ -928,7 +1126,7 @@ Semantica = {
             '>': 'err', 
             '<': 'err',
             '!=': 'err',
-            '==': 'err',
+            '~=': 'err',
             '&': 'err',
             '|': 'err',
             '=': 'err'
@@ -941,11 +1139,14 @@ Semantica = {
             '>': 'err', 
             '<': 'err',
             '!=': 'err',
-            '==': 'err',
+            '~=': 'err',
             '&': 'err',
             '|': 'err',
             '=': 'err'
-        }
+        },
+        '$': 'float',
+        '?': 'float',
+        '¡': 'float'
     },
     # CHAR
     'char': {
@@ -957,7 +1158,7 @@ Semantica = {
             '>': 'err', 
             '<': 'err',
             '!=': 'err',
-            '==': 'err',
+            '~=': 'err',
             '&': 'err',
             '|': 'err',
             '=': 'err'
@@ -970,7 +1171,7 @@ Semantica = {
             '>': 'err', 
             '<': 'err',
             '!=': 'err',
-            '==': 'err',
+            '~=': 'err',
             '&': 'err',
             '|': 'err',
             '=': 'err'
@@ -983,7 +1184,7 @@ Semantica = {
             '>': 'err', 
             '<': 'err',
             '!=': 'bool',
-            '==': 'bool',
+            '~=': 'bool',
             '&': 'err',
             '|': 'err',
             '=': 'char'
@@ -996,11 +1197,14 @@ Semantica = {
             '>': 'err', 
             '<': 'err',
             '!=': 'err',
-            '==': 'err',
+            '~=': 'err',
             '&': 'err',
             '|': 'err',
             '=': 'err'
-        }
+        },
+        '$': 'err',
+        '?': 'char',
+        '¡': 'char'
     },
     # BOOL
     'bool': {
@@ -1012,7 +1216,7 @@ Semantica = {
             '>': 'err', 
             '<': 'err',
             '!=': 'err',
-            '==': 'err',
+            '~=': 'err',
             '&': 'err',
             '|': 'err',
             '=': 'err'
@@ -1025,7 +1229,7 @@ Semantica = {
             '>': 'err', 
             '<': 'err',
             '!=': 'err',
-            '==': 'err',
+            '~=': 'err',
             '&': 'err',
             '|': 'err',
             '=': 'err'
@@ -1038,7 +1242,7 @@ Semantica = {
             '>': 'err', 
             '<': 'err',
             '!=': 'err',
-            '==': 'err',
+            '~=': 'err',
             '&': 'err',
             '|': 'err',
             '=': 'err'
@@ -1051,11 +1255,14 @@ Semantica = {
             '>': 'err', 
             '<': 'err',
             '!=': 'bool',
-            '==': 'bool',
+            '~=': 'bool',
             '&': 'bool',
             '|': 'bool',
             '=': 'bool'
-        }
+        },
+        '$': 'err',
+        '?': 'err',
+        '¡': 'err'
     }
 }
 
@@ -1116,46 +1323,55 @@ class ParserError(Exception): pass
 
 import sys
 import ply.yacc as yacc
+import time
 
 from lexer import tokens
 
 parser = yacc.yacc()
 
+# Módulo principal donde se llama la función para 
+# parsear el archivo.jitt
 if __name__ == '__main__':
-
+    start_time = time.time()
     if len(sys.argv) == 2:
         file = str(sys.argv[1])
-        try:
-            f = open(file, 'r')
-            data = f.read()
-            f.close()
+        if(file[-5:] == ".jitt") :
             try:
-                result = parser.parse(data, tracking=True)
-            except ParserError:
-                result = "err"
-            if result == "COMPILADO":
-                print("Se compilo exitosamente.")
-                orig_stdout = sys.stdout
-                f = open('!jitters.out', 'w')
-                sys.stdout = f
-                print('>Funciones')
-                for program in TablaFunciones:
-                    print ('p:',program)
-                    for var in TablaFunciones[program]:
-                        print (var,' : ',TablaFunciones[program][var])
-                print('>Constantes')
-                for const in TablaConstantes:
-                    print (str(const))
-                    for var in TablaConstantes[const]:
-                        print (var,' : ',TablaConstantes[const][var])
-                print('>Quads')
-                for i in range(len(Quad)):
-                    print(Quad[i][0], Quad[i][1], Quad[i][2], Quad[i][3])
-                sys.stdout = orig_stdout
+                # Sea abre el archivo en encoding que reconozca los caracteres del Español
+                f = open(file, 'r', encoding='utf-8')
+                data = f.read()
                 f.close()
-            clearEverything()
-        except EOFError:
-            print(EOFError)
+                try: # Esto se hace para poder detern la compilacion si se encuentra un error
+                    result = parser.parse(data, tracking=True)
+                except ParserError: # Error definido por nosotros 
+                    result = "err"
+                if result == "COMPILADO":
+                    # Informa al usario
+                    print("Se compilo exitosamente. ---Tiempo de compilación: %s segundos ---" % (round((time.time() - start_time), 2)))
+                    # Mueve la informacion relevante al arhcivo .out que se genera para ejecucion
+                    orig_stdout = sys.stdout
+                    f = open('!jitters.out', 'w')
+                    sys.stdout = f
+                    print('>Funciones')
+                    for program in TablaFunciones:
+                        print ('p:',program)
+                        for var in TablaFunciones[program]:
+                            print (var,' : ',TablaFunciones[program][var])
+                    print('>Constantes')
+                    for const in TablaConstantes:
+                        print (str(const))
+                        for var in TablaConstantes[const]:
+                            print (var,' : ',TablaConstantes[const][var])
+                    print('>Quads')
+                    for i in range(len(Quad)):
+                        print(Quad[i][0], Quad[i][1], Quad[i][2], Quad[i][3])
+                    sys.stdout = orig_stdout
+                    f.close()
+                clearEverything() # Limpia todas las estructuras que se usaron
+            except EOFError:
+                print(EOFError)
+        else:
+            print("El archivo", file, "no es tipo: .jitt")
     elif len(sys.argv) < 2:
         print("No se ingreso el archivo a compilar")
     else :

@@ -1,6 +1,0 @@
-Programa myProgram;
-var int : i, k;
-
-principal() {
-	escribe("Hola");
-}

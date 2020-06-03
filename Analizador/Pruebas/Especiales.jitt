@@ -1,0 +1,30 @@
+Programa myProgram;
+var int : i, j, k;
+  float : x[3][3], res, inv[3][3];
+
+principal() {
+  escribe("Mat1");
+  desde i = 0; hasta 3 hacer {
+    desde k = 0; hasta 3 hacer {
+      lee(x[i][k]);
+    }
+  }
+
+  x[1][1] = x[1][1] - 4.0;
+
+  res = x$;
+  escribe("Determinante:", res);
+
+  inv = x?;
+  escribe("Inversa:");
+  desde i = 0; hasta 3 hacer {
+    escribe(inv[i][0], inv[i][1], inv[i][2]);
+  }
+
+  x = x¡;
+  escribe("Transpuesta:");
+  desde i = 0; hasta 3 hacer {
+    escribe(x[i][0], x[i][1], x[i][2]);
+  }
+
+}

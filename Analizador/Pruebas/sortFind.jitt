@@ -1,0 +1,60 @@
+Programa myProgram;
+var int : vector[10];
+    int : x, n;
+
+funcion void sort();
+var int : i, j, min, temp;
+  {
+    i = 0;
+    mientras(i < 9) haz{
+        min = i;
+        j = i + 1;
+        mientras(j < 10) haz 
+        {
+            si(vector[j] < vector[min]) entonces {
+                min = j;
+            }
+            j = j + 1;
+        }
+        temp = vector[i];
+        vector[i] = vector[min];
+        vector[min] = temp;
+        i = i +1;
+    }
+  }
+
+funcion int find(int : num); 
+var int : i;
+{
+    desde i = 0; hasta 10 hacer {
+        si (vector[i] ~= num) entonces {
+            regresa(i);
+        }
+    }
+    regresa(1 - 2);
+}
+
+principal() {
+  escribe("Ingresa 10 datos");
+  desde x = 0; hasta 10 hacer {
+      lee(vector[x]);
+  }
+  sort();
+  escribe("Después:");
+  desde x = 0; hasta 10 hacer {
+      escribe(vector[x]);
+    }
+  
+  escribe("Ingresa número que deseas saber donde se encuentra en el vector");
+  lee(n);
+  
+  x = find(n);
+
+  si (x > 0 | x ~= 0) entonces{
+      escribe("El número ", n, "se encuentra en la posición", x, "en el vector");
+  }
+  sino {
+      escribe("El número ", n, "no se encuentra en el vector");
+  }
+
+}

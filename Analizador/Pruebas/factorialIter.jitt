@@ -1,0 +1,29 @@
+Programa myProgram;
+var int : i, j, k;
+  
+funcion int factorial(int:x);
+var int : f;
+  {
+    f = 1;
+    si (x < 0) entonces{
+      f = 0;
+    }
+    sino {
+      si (x ~= 0) entonces {
+        f = 1;
+      }
+      sino {
+        i = 1;
+        mientras (i < (x + 1)) haz {
+          f = f * i;
+          i = i + 1;
+        }
+      }
+    }
+    regresa(f);
+  }
+
+principal() {
+  escribe("Escribe el número que le quieres sacar el factorial);
+  escribe(factorial(6));
+}
