@@ -1,5 +1,5 @@
 Programa myProgram;
-var int : i, j, k;
+var int : num;
   
 funcion int factorial(int:x);
   {
@@ -12,5 +12,7 @@ funcion int factorial(int:x);
   }
 
 principal() {
-  escribe(factorial(6));
+  escribe("Escribe el número que le quieres sacar el factorial");
+  lee(num);
+  escribe(factorial(num));
 }

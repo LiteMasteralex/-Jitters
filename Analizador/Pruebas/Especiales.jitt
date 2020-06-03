@@ -1,6 +1,7 @@
 Programa myProgram;
 var int : i, j, k;
-  float : x[3][3], res, inv[3][3];
+  int : x[3][3];
+  float : res, inv[3][3];
 
 principal() {
   escribe("Mat1");
@@ -10,7 +11,14 @@ principal() {
     }
   }
 
-  x[1][1] = x[1][1] - 4.0;
+  x = x¡;
+  escribe("Transpuesta:");
+  desde i = 0; hasta 3 hacer {
+    escribe(x[i][0], x[i][1], x[i][2]);
+  }
+
+
+  x[1][1] = x[1][1] - 4;
 
   res = x$;
   escribe("Determinante:", res);
@@ -19,12 +27,6 @@ principal() {
   escribe("Inversa:");
   desde i = 0; hasta 3 hacer {
     escribe(inv[i][0], inv[i][1], inv[i][2]);
-  }
-
-  x = x¡;
-  escribe("Transpuesta:");
-  desde i = 0; hasta 3 hacer {
-    escribe(x[i][0], x[i][1], x[i][2]);
   }
 
 }
