@@ -2,7 +2,7 @@
 Proyecto para la clase de Diseño de Compiladores Feb-Jun 2020
 
 <p align="center">
-  <img width="460" height="300" src="https://www.imore.com/sites/imore.com/files/styles/large/public/field/image/2020/04/jitters-pic.png?itok=2jRJA0Ni">
+  <img  src="https://www.imore.com/sites/imore.com/files/styles/large/public/field/image/2020/04/jitters-pic.png?itok=2jRJA0Ni">
 </p>
 
 ## Manual de Usuario
