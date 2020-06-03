@@ -1,0 +1,16 @@
+Programa myProgram;
+var int : vector[10];
+  
+funcion int factorial(int:x);
+  {
+      si(x ~= 0) entonces{
+          regresa(1);
+      }
+      sino{
+          regresa(x * factorial(x - 1));
+      }
+  }
+
+principal() {
+  escribe(factorial(6));
+}
