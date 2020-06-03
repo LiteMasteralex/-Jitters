@@ -1323,46 +1323,52 @@ class ParserError(Exception): pass
 
 import sys
 import ply.yacc as yacc
+import time
 
 from lexer import tokens
 
 parser = yacc.yacc()
 
+# Módulo principal donde se llama la función para 
+# parsear el archivo.jitt
 if __name__ == '__main__':
-
+    start_time = time.time()
     if len(sys.argv) == 2:
         file = str(sys.argv[1])
-        try:
-            f = open(file, 'r', encoding='utf-8')
-            data = f.read()
-            f.close()
+        if(file[-5:] == ".jitt") :
             try:
-                result = parser.parse(data, tracking=True)
-            except ParserError:
-                result = "err"
-            if result == "COMPILADO":
-                print("Se compilo exitosamente.")
-                orig_stdout = sys.stdout
-                f = open('!jitters.out', 'w')
-                sys.stdout = f
-                print('>Funciones')
-                for program in TablaFunciones:
-                    print ('p:',program)
-                    for var in TablaFunciones[program]:
-                        print (var,' : ',TablaFunciones[program][var])
-                print('>Constantes')
-                for const in TablaConstantes:
-                    print (str(const))
-                    for var in TablaConstantes[const]:
-                        print (var,' : ',TablaConstantes[const][var])
-                print('>Quads')
-                for i in range(len(Quad)):
-                    print(Quad[i][0], Quad[i][1], Quad[i][2], Quad[i][3])
-                sys.stdout = orig_stdout
+                f = open(file, 'r', encoding='utf-8')
+                data = f.read()
                 f.close()
-            clearEverything()
-        except EOFError:
-            print(EOFError)
+                try:
+                    result = parser.parse(data, tracking=True)
+                except ParserError:
+                    result = "err"
+                if result == "COMPILADO":
+                    print("Se compilo exitosamente. ---Tiempo de compilación: %s segundos ---" % (round((time.time() - start_time), 2)))
+                    orig_stdout = sys.stdout
+                    f = open('!jitters.out', 'w')
+                    sys.stdout = f
+                    print('>Funciones')
+                    for program in TablaFunciones:
+                        print ('p:',program)
+                        for var in TablaFunciones[program]:
+                            print (var,' : ',TablaFunciones[program][var])
+                    print('>Constantes')
+                    for const in TablaConstantes:
+                        print (str(const))
+                        for var in TablaConstantes[const]:
+                            print (var,' : ',TablaConstantes[const][var])
+                    print('>Quads')
+                    for i in range(len(Quad)):
+                        print(Quad[i][0], Quad[i][1], Quad[i][2], Quad[i][3])
+                    sys.stdout = orig_stdout
+                    f.close()
+                clearEverything()
+            except EOFError:
+                print(EOFError)
+        else:
+            print("El archivo", file, "no es tipo: .jitt")
     elif len(sys.argv) < 2:
         print("No se ingreso el archivo a compilar")
     else :
