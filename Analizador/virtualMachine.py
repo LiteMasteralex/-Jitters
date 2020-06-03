@@ -362,10 +362,13 @@ def trans(left_op, right_op, res):
 	result = left_mat.transpose()
 	moveToMemory(res, result)
 
+# Esta funcion es la prncipal que ejecuta el codigo con la cual hace todas las operaciones
 def ejecutaQuadruplos():
 	global auxQuad
 	quadNum = 0
+	# Para cada quad que se genero en memoria se realiza una operacion
 	while quadNum < len(Quads):
+		# Esta estructura sirve com nuestro switch principal, segun la llave que se le de regresa una funcion a la cual llamar
 		switcher = {
 			'+': suma,
 			'-': resta,
@@ -396,12 +399,14 @@ def ejecutaQuadruplos():
 		}
 		current = Quads[quadNum]
 		auxQuad = quadNum
+		# obten la funcion segun el resultado del switcher
 		fun = switcher.get(current[0], 'err')
+		# Valida las direcciones 
 		left_op, right_op, res = addrCheck(current[1], current[2], current[3])
-		if(current[0] == '+Addr'):
+		if(current[0] == '+Addr'): # Caso especial donde queremos que la direccion se tome literalmente
 			res = current[3]
-		res = fun(left_op, right_op, res)
-		if(res != None):
+		res = fun(left_op, right_op, res) # Llama a la funcion 
+		if(res != None): # El None se recibe cuando no se requier hace salto a otra instruccion
 			quadNum = int(res)
 		else:
 			quadNum = quadNum + 1
@@ -433,6 +438,7 @@ import sys
 import os
 
 def main():
+	#Obten el archivo y define las estructuras que se usaran
 	global Quads, TablaFunciones, TablaConstantes, MemoriaTemp, Memoria
 	filepath = sys.argv[1]
 	if not os.path.isfile(filepath):
