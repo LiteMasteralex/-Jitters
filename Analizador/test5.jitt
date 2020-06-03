@@ -1,0 +1,27 @@
+Programa myProgram;
+var int : i, k;
+	int : pi[2][3], pi2[3][2], mul[2][2], suma[2, 3];
+
+principal() {
+	i = k * 5;
+
+	escribe("Mat1");
+	desde i = 0; hasta 2 hacer {
+		desde k = 0; hasta 3 hacer {
+			lee(pi[i][k]);
+		}
+	}
+	escribe("Mat2");
+	desde i = 0; hasta 3 hacer {
+		desde k = 0; hasta 2 hacer {
+			lee(pi2[i][k]);
+		}
+	}
+
+	res = pi * 5;
+
+	escribe("Res");
+	desde i = 0; hasta 2 hacer {
+		escribe(res[i][0], res[i][1], res[i][2]);
+	}
+}
