@@ -57,30 +57,43 @@ def separaMemoria(contexto, tipo, size):
 # Returns: str : contexto de la ubicacion en memoria
 # Usage: Esta funcion se utiliza cuando se quiera indexar memoria ya que para esto se necesita el contexto donde esta 
 def obtenContexto(loc):
+	# La memoria se indexa como str pero la comparacion debe ser en int
 	loc = int(loc)
-	if(loc < 4000):
+	if(loc < 4000): # Limite de la memoria Global
 		return 'Global'
-	elif(loc < 7000):
+	elif(loc < 7000): # Limite de la memoria Local
 		return 'Local'
-	elif(loc < 12000):
+	elif(loc < 12000): # Limite de la meoria Temporal
 		return 'Temporal'
 	else:
 		return 'Constante'
 
+# Esta funcion incializa la memoria cuando se genera un contexto usa la funcion funciona como un builder para la estructura de Memoria
+# Parametros: nombre : str, contexto : str
+# Returns: None
+# Usage: Esta funcion se usa cuando se cambia un contexto y al inicio de la ejecucion
 def initContexto(nombre, contexto):
+	# Se usa contexto para poder inicializar las globales al inicio de la ejecuccion
 	separaMemoria(contexto, 'int', TablaFunciones[nombre]['int'])
 	separaMemoria(contexto, 'float', TablaFunciones[nombre]['float'])
 	separaMemoria(contexto, 'char', TablaFunciones[nombre]['char'])
+	# Aqui se inicializa el contexto temporal para cada funcion
 	separaMemoria('Temporal', 'int', TablaFunciones[nombre]['tint'])
 	separaMemoria('Temporal', 'float', TablaFunciones[nombre]['tfloat'])
 	separaMemoria('Temporal', 'char', TablaFunciones[nombre]['tchar'])
 	separaMemoria('Temporal', 'bool', TablaFunciones[nombre]['bool'])
 	separaMemoria('Temporal', 'addr', TablaFunciones[nombre]['addr'])
 
+# Esta funcion asigna los parametros como variables en el nuevo contexto
+# Parametros: lista : list, params : 
+# Returns: None
+# Usage: Esta funcion se utiliza cuando hay un cambio de contexto y sirve para traducir los parametros a su memoria correspondiente
 def asignaParametros(lista, params):
+	# Obtiene las direcciones basicas de las variables locales ya que los paramentros siempre son las primeras direcciones
 	countI = DefMemoria['Local']['int']
 	countF = DefMemoria['Local']['float']
 	countC = DefMemoria['Local']['char']
+	# Para cada parametro verifica su tipo y definelo en su memoria correspondiente
 	for idx in range(len(lista)):
 		if(lista[idx] == 'i'):
 			Memoria['Local'][str(countI)] = params[idx]
@@ -91,47 +104,75 @@ def asignaParametros(lista, params):
 		if(lista[idx] == 'c'):
 			Memoria['Local'][str(countC)] = params[idx]
 			countC = countC + 1
-
+# Esta funcion recupera el contexto anterior y remplaza el actual
+# Parametros: None
+# Returns: int : numero de cuaddruplo al que se tiene que regresar la ejecuccion
+# Usage: Esta funcion se llama cuando se termina de ejecutar una funcion ya sea con un ENPORC o con un regresa
 def returnContext():
 	global currentFunct, Memoria
+	# Obten la memoria del stack
 	last = LastContext.pop()
+	# Remplaza la memoria del contexto
 	Memoria['Local'] = last['memoria']['Local']
 	Memoria['Temporal'] = last['memoria']['Temporal']
+	# Actualiza el contexo
 	currentFunct = last['nombre']
 	return last['quad']
 
+# Esta funcion convierte de una direccion de tipo Adrr a la direccion actual de memoria
+# Parametros: left : str, right : str, res : str
+# Returns: list : lista que contienen las nuevas direcciones a usar en ejecucion
+# Usage: Esta funcion es usada en cada cuadruplo para verificar cuando se esten usando dirreciones
 def addrCheck(left, right, res):
+	# Agrega las direcciones a convertir a una lista para poder iterar sobre ellas
 	params = [left, right, res]
-	results = []
+	results = [] # Resultado final que se regresa
 	for var in params:
-		try:
+		try: # Se hace un try porque no todo lo que viene en un cuadruplo de puede convertir a int
 			value = int(var)
 		except:
 			value = 0
-		if(value >= 11000 and value < 12000):
-			results.append(Memoria['Temporal'][str(value)])
+		if(value >= 11000 and value < 12000): # Se compara contra el rango de las temporales de tipo addr
+			results.append(Memoria['Temporal'][str(value)]) # Se obtiene el valor de la direccion actual
 		else:
 			results.append(var)
 	return results
 
+# Esta funcion reconstruye una matriz dada su direccion base y su tamaño
+# Parametros: loc : int, x : int, y : int
+# Return np.array : matriz reconstruida con los valores de memoria
+# Usage: Esta funcion es usada cuando se hacen operaciones en las cuales nuestros operadores se manejan como matrizes
 def recoverMatrix(loc, x, y):
-	locCont = obtenContexto(loc)
-	result = []
-	for idxX in range(x):
-		row = []
+	locCont = obtenContexto(loc) # Obten el contexto para sacar el valor
+	result = [] # El resultado es una matriz
+	for idxX in range(x): # Se indexa como normalmente se indexaria una matriz
+		row = [] # El renglon de la matriz
 		for idxY in range(y):
+			# el offset que se calcual es el siguiente:  direccion base + indice en X * tamaño del renglon + indice en y
 			row.append(Memoria[locCont][str(int(loc) + (idxX*y) + idxY)])
 		result.append(row)
 	return np.array(result)
 
+# Esta funcion pasa los valores de una matriz memoria dada una direccion base
+# Parametros: loc : str, arr : np.array
+# Returns : None
+# Usage: Esta funcion se usa cuando se quiere guardar en memoria una variable dimensionada
 def moveToMemory(loc, arr):
 	locCont = obtenContexto(loc)
 	for x in range(len(arr)) :
 		for y in range(len(arr[x])):
+			# el offset que se calcual es el siguiente:  direccion base + indice en X * tamaño del renglon + indice en y
 			Memoria[locCont][str(int(loc) + (x * len(arr)) + y)] = arr[x][y]
 
 class ExecuteError(Exception): pass
 
+# Esta funcion suma los valores de las direcciones en memoria y las guarda en una memoria 
+# Parametros: left_op : str, right_op : str, res : str
+# Returns: None
+# Usage: Esta funcion se usa cuando se encuentra un cuadruplo de suma en ejecucion
+# Notas: Esta misma estructura se usa en Resta, Multiplicacion y Asignacion lo unico que cambia es la operacion que se hace.
+# 			El retorno es None pero como todas forman parte de un switch se puede regresar tambien un numero de cuadruplo al
+#			que se debe de mover
 def suma(left_op, right_op, res):
 	global  left_dim, right_dim
 	left_mat = recoverMatrix(left_op, left_dim[0], left_dim[1])
@@ -159,6 +200,13 @@ def multi(left_op, right_op, res):
 	moveToMemory(res, result)
 	return None
 
+# Esta funcion realiza la operacion de dividir dos valores de memoria y guardar el resultado en memoria
+# Parametros: left_op : str, right_op : str, res : str
+# Returns: None
+# Usage: Esta funcion se usa cuando se encuentra un cuadruplo de division en ejecucion
+# Notas: Esta misma estructura se usa en la mayoria de las operaciones en los cuadruplos lo unico que cambia es la operacion
+#			que se hace. El retorno es None pero como todas forman parte de un switch se puede regresar tambien un numero de 
+#			cuadruplo al que se debe de mover, la diferencia entre esta y la suma es que los operadores no se manejan como matrizes
 def divi(left_op, right_op, res):
 	leftCont, rightCont, resCont = obtenContexto(left_op), obtenContexto(right_op), obtenContexto(res)
 	Memoria[resCont][res] = Memoria[leftCont][left_op] / Memoria[rightCont][right_op]
