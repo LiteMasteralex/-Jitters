@@ -36,4 +36,8 @@ Proyecto para la clase de Diseño de Compiladores Feb-Jun 2020
 
 	![](Images/3.png)
 
-#¡Listo! Puedes jugar probando con nuestros código ejemplos en el Folder/Pruebas.
+<p align="right">
+   <img  src="https://dodo.ac/np/images/thumb/e/ed/Jitters_PC_icon.png/124px-Jitters_PC_icon.png">
+</p>
+##
+# ¡Listo! Puedes jugar probando con nuestros código ejemplos en el Folder/Pruebas.
