@@ -1,7 +1,7 @@
 # !Jitters
 Proyecto para la clase de Diseño de Compiladores Feb-Jun 2020
 
-<img align="center" rc="Images/0.png" width=100>
+<img align="center" src="Images/0.png" width=100>
 
 
 ## Manual de Usuario
