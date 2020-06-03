@@ -897,7 +897,7 @@ def p_comparacion_desde(t):
     right_type = TypeStack.pop()
     left_op = OpStack.pop()
     left_type = TypeStack.pop()
-    oper = '>'
+    oper = '<'
     res_type = Semantica[right_type][left_type][oper]
     if(res_type == 'err'):
         print("Error de Semantica en la linea {0}: la operacion '{1} {2} {3}' no esta permitida".format(t.lineno(1), right_type, oper, left_type))
@@ -1014,7 +1014,7 @@ Semantica = {
         },
         '$': 'float',
         '?': 'int',
-        '¡': 'int'
+        '¡': 'float'
     },
     #Float
     'float': {
