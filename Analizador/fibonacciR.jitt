@@ -1,0 +1,23 @@
+Programa myProgram;
+var int : n;
+
+# Hay algo raro
+funcion int fibonacciPos(int:pos);
+var int : stop;
+  {
+      stop = 1;
+      si(pos < 1 | pos ~= 1 & stop != 0) entonces{
+          stop = 0; #Si intento hacer el regresar aqui
+      }
+      si (stop ~= 0) entonces{
+          regresa(pos);
+      }
+      regresa(fibonacciPos(pos - 1) + fibonacciPos(pos - 2));
+  }
+
+
+principal() {
+  escribe("Hasta que número de serie fibonacci quieres?");
+    lee(n);
+    escribe("El número en la posición", n, "es:", fibonacciPos(n));
+}

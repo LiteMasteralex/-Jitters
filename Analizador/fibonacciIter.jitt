@@ -1,0 +1,38 @@
+Programa myProgram;
+var int : n;
+  
+funcion void fibonacci(int:num);
+var int: f, f1, f2;
+  {
+      f1 = 1 - 2;
+      f2 = 1;
+      mientras (num >0) haz{
+          f = f1 + f2;
+          f1 = f2;
+          f2 = f;
+          escribe(f);
+          num = num - 1;
+      }
+  }
+
+funcion int fibonacciPos(int:num);
+var int: f, f1, f2;
+  {
+      f1 = 1 - 2;
+      f2 = 1;
+      mientras (num >0) haz{
+          f = f1 + f2;
+          f1 = f2;
+          f2 = f;
+          num = num - 1;
+      }
+      regresa(f);
+  }
+
+principal() {
+    escribe("Hasta que número de serie fibonacci quieres?");
+    lee(n);
+    escribe("La serie fibonacci hasta la posición", n,"es:");
+    fibonacci(n + 1);
+    escribe("El número en la posición", n, "es:", fibonacciPos(n + 1));
+}
