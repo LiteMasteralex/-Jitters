@@ -20,6 +20,10 @@ LastContext = []
 
 currentFunct = ''
 
+# Esta funcion borra la memoria asignada
+# Parametros: None
+# Returns: None
+# Usage: Se utiliza cuando finaliza la ejecucion de la maquina virtual
 def clearMemTemp():
 	global MemoriaTemp
 	MemoriaTemp = {
@@ -29,8 +33,13 @@ def clearMemTemp():
 		'Constante': {}
 	}
 
+# Esta funcion inicializa la memoria
+# Parametros contexto : str, tipo : str, size : int
+# Returns: None
+# Usage: Se utiliza cuando se quiere seperar memoria en el contexto actual, esto se hace cada vez que se cambia de contexto
 def separaMemoria(contexto, tipo, size):
 	inicio = DefMemoria[contexto][tipo]
+	# Para cada espacio de meoria inicializalo segun el tipo que recibiste
 	for loc in range(inicio, inicio + int(size)):
 		if(tipo == 'int'):
 			MemoriaTemp[contexto][str(loc)] = 0
@@ -43,6 +52,10 @@ def separaMemoria(contexto, tipo, size):
 		else:
 			MemoriaTemp[contexto][str(loc)] = 0
 
+# Esta funcion regresa el contexto de una ubicacion segun el rango donde esta
+# Paramentos: loc : int
+# Returns: str : contexto de la ubicacion en memoria
+# Usage: Esta funcion se utiliza cuando se quiera indexar memoria ya que para esto se necesita el contexto donde esta 
 def obtenContexto(loc):
 	loc = int(loc)
 	if(loc < 4000):

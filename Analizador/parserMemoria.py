@@ -18,10 +18,8 @@ DimenIdentStack = []
 DimensionStack = []
 DimensionNumStack = []
 
-#Memoria
-countParams = 0
-
 # Auxiliares
+countParams = 0
 current_type = 'void'
 current_function = ''
 current_params = ''
@@ -30,14 +28,19 @@ is_global = True
 isMatrix = False
 
 # Esta funcion regresa la memoria Local y Temporal a su estado original
+# Parametros: None
+# Returns: None
+# Usage: Est funcion se usa cuando se termina una funcion y se necesita reiniciar el contexto
 def clearLocales():
     global Memoria
+    # Reinica el valor de las Locales
     Memoria['Local'] = {
         'int': 4000,
         'float': 5000,
         'char': 6000
     }
 
+    #Reinicia el valor de las Temporales
     Memoria['Temporal'] = {
         'int': 7000,
         'float': 8000,
@@ -47,54 +50,87 @@ def clearLocales():
     }
 
 
-# Esta funcion limpia todas las tablas y constantes que se usaron para asegurar que no haya nada resiudal si se quiere seguir compliando
+# Esta funcion limpia todas las tablas y constantes que se usaron
+# Parametros: None
+# Returns: None
+# Usage: Esta funcion se usa cuando se termino de compilar y se quiere eliminar todos los contextos
 def clearEverything():
-    # Tablas
+    # Limpia de las Tablas
     global TablaFunciones, TablaVariables, TablaGlobales
     TablaFunciones = {}
     TablaVariables = {}
     TablaGlobales = {}
 
-    # Quadruplos
+    # Limpia de los Stacks
     OpStack.clear()
+    OperDimStack.clear()
     OperStack.clear()
     TypeStack.clear()
+    JumpStack.clear()
+    ForStack.clear()
+    Quad.clear()
+    DimenIdentStack.clear()
+    DimensionStack.clear()
+    DimensionNumStack.clear()
     Quad.clear()
 
-    #Memoria
+    # Limpia de Memoria
     global iGlobales, fGlobales, cGlobales, bGlobales
     iGlobales = 1000
     fGlobales = 2000
     cGlobales = 3000
     bGlobales = 4000
 
+    # Se llama a la funcion que limpia la meoria del contexto
     clearLocales()
 
-    # Auxiliares
-    global current_type
+    # Limpia de auxiliares
+    global current_type, countParams, current_function, current_params, has_return, is_global, isMatrix
+    countParams = 0
     current_type = 'void'
+    current_function = ''
+    current_params = ''
+    has_return = False
+    is_global = True
+    isMatrix = False
 
 # Esta funcion regresa el numero de variables de un tipo segun el contexto
+# Parametros: contexto : str, tipo : str
+# Returns: int : numero de memoria utilizada en el contexto
+# Usage: Esta funcion se utiliza cuando se requiere contabilizar los espacios de memoria que se utilizaron
 def countMemoria(contexto, tipo):
+    # Regresa : # de memoria utilizada - (Limite de meoria para - offset de inicio de memoria))
     return Memoria[contexto][tipo] - (LimiteMemoria[contexto][tipo] - 1000)
 
 # Esta funcion le asigna a una variable la direccion donde empieza su memoria y el tamaño de esta memoria
+# Paramentros: contexto : str, tipo : str, dimension : dict
+# Returns: int : ubicacion en memoria que se le asigno, int : tamaño que utilizo en memoria
+# Usage: Esta funcion es llamada cada vez que se requiere separa espacio para un variable
 def asignarMemoria(contexto, tipo, dimension):
     global Memoria, LimiteMemoria
+    # Obten la direccion base en memoria para la nueva variable
     ubicacion = Memoria[contexto][tipo]
     size = 1
+    # Mientras tenga dimesniones en el dicionario
     while(dimension != None):
+        # Obten el tamaño de la dimension y obten la siguiente dimension
         size = size * dimension['sup']
         dimension = dimension['nxt']
+    # Mueve el contador de memoria
     Memoria[contexto][tipo] = ubicacion + size
+    # Valida que todavia haya espacio en memoria para que no afecte otros contexots
     if(ubicacion >= LimiteMemoria[contexto][tipo]):
         print("No hay mas espacios de tipo", tipo) #Este error no deberia de causarse en compliacion solo nos sirve a nosotros para definir los limites de memoria de cada tipo
         raise ParserError()
     return ubicacion, size
 
 # Esta funcion regresa una nueva variable con la estructura completa que se necesita para agregarla a la Tabla de funciones
+# Parametros: nombre : str, dimension : dict
+# Returns: dict : {name : str, loc : int, nxt : dict, size : int}
+# Usage: esta fucnion es la interfaze para crear varaibles y se usa cuando se requier una variable el formata que va en Tabla de variables
 def defineVariable(nombre, dimension):
     global is_global, current_type
+    # Si es global se necesita asignar memoria global
     if(is_global):
         memoria, size = asignarMemoria('Global', current_type, dimension)
         return {'name': nombre, 'loc': memoria, 'nxt': dimension, 'size': size}
@@ -103,19 +139,31 @@ def defineVariable(nombre, dimension):
         return {'name': nombre, 'loc': memoria, 'nxt': dimension, 'size': size}
 
 # Busca la variable en las definiciones actuales y regresa su valor
+# Parametros: nombre : str, lineNo : int
+# Return: dict : {name : str, loc : int, nxt : dict, size : int}
+# Esta funcion se utiliza cuando se quiere consegui una variable de las definiciones de las Tablas
 def obtenVariable(nombre, lineNo):
     variable = ''
+    # Busca si existe en la las variables locales
     if nombre in TablaVariables:
         variable = TablaVariables[nombre]
+    #Busca si existe en las variables globales
     elif nombre in TablaGlobales:
         variable = TablaGlobales[nombre]
     else:
         print("La variable '{0}' no esta definida en la linea {1}".format(nombre, lineNo))
         raise ParserError()
+    # Se regresa la variable con el formato para la Tabla de Variables
     return variable
+
 # Esta funcion realiza la generacion de cuadruplos para las operaciones normales en las expresiones
+# Parametros: lineNo : int
+# Returns: None
+# Usage: Esta funcion se utiliza cada vez que se requiera hacer los cuadruplos de operaciones dentro de expresiones
 def cuadruplosOperaciones(lineNo):
+    # Casos especiales cuando no se necesita dimensiones
     operNorm = ['/', '<', '>', '!=', '~=', '&', '|']
+    # Obten los operadores y sus diemnsiones
     right_op = OpStack.pop()
     right_type = TypeStack.pop()
     right_dim = OperDimStack.pop()
@@ -123,90 +171,116 @@ def cuadruplosOperaciones(lineNo):
     left_type = TypeStack.pop()
     left_dim = OperDimStack.pop()
     oper = OperStack.pop()
+    # Verifica la sematica con los tipos
     res_type = Semantica[right_type][left_type][oper]
     if(res_type == 'err'):
         print("Error de Semantica en la linea {0}: la operacion '{1} {2} {3}' no esta permitida".format(lineNo, left_type, oper, right_type))
         raise ParserError()
-    # Verificar que la op se pueda completar con las dims
+    # Verificar la semantica con las dimesniones
     res_dim = semanticaDimension(oper, left_dim, right_dim)
     if(res_dim == 'err') :
         print("Error de dimensones en la linea {0}: la operacion con dim '{1}' y dim '{3}' para '{2}' no esta permitida".format(lineNo, left_dim, oper, right_dim))
         raise ParserError()
-    # Genera el cuadruplo que define las dims a usar
+    # Genera el cuadruplo que define las dimesniones que la maquina virtual debe de usar
     if(oper not in operNorm) :
         str_left_dim = str(left_dim[0]) + ',' + str(left_dim[1])
         str_right_dim = str(right_dim[0]) + ',' + str(right_dim[1])
         str_res_dim = str(res_dim[0]) + ',' + str(res_dim[1])
         quad = ['dim', str_left_dim, str_right_dim, str_res_dim]
         Quad.append(quad)
+    # Cuando sea una asignacion el ultimo elemento del cuadruplo debe estar vacio
     if(oper == '=') :
         result = '_'
     else :
+        # Cuando no es una asignacion el resultado de la expresion se vuelve a agregar a los stacks
         dimension = obtenDim(res_dim[0], res_dim[1])
         result, size = asignarMemoria('Temporal', res_type, dimension)
         TypeStack.append(res_type)
         OperDimStack.append(res_dim)
         OpStack.append(result)
+    # Genera el cuadruplo y agregalo
     quad = [oper, left_op, right_op, result]
     Quad.append(quad)
 
-# Esta funcion realiza la generacion de cuadruplos para las operaciones normales en las expresiones
+# Esta funcion realiza la generacion de cuadruplos para las operaciones especiales en las expresiones
+# Parametros: lineNo : int
+# Returns: None
+# Usage: Esta funcion se utiliza cada vez que se requiera hacer los cuadruplos de operaciones especiales dentro de expresiones
 def cuadruplosEspeciales(lineNo):
+    # Obten los operadores y sus diemnsiones
     left_op = OpStack.pop()
     left_type = TypeStack.pop()
     left_dim = OperDimStack.pop()
     oper = OperStack.pop()
     res_type = Semantica[left_type][oper]
+    # Verifica la sematica con los tipos
     if(res_type == 'err'):
         print("Error de Semantica en la linea {0}: la operacion '{1} {2}' no esta permitida".format(lineNo, left_type, oper))
         raise ParserError()
-    # Verificar que la op se pueda completar con las dims
+    # Verificar la semantica con las dimesniones
     res_dim = semanticaDimension(oper, left_dim, [1, 1])
     if(res_dim == 'err') :
         print("Error de dimensones en la linea {0}: la operacion con dim '{1}' para '{2}' no esta permitida".format(lineNo, left_dim, oper))
         raise ParserError()
-    # Genera el cuadruplo que define las dims a usar
+    # Genera el cuadruplo que define las dimesniones que la maquina virtual debe de usar
     str_left_dim = str(left_dim[0]) + ',' + str(left_dim[1])
     str_res_dim = str(res_dim[0]) + ',' + str(res_dim[1])
     quad = ['dim', str_left_dim, '_', str_res_dim]
     Quad.append(quad)
+    # El resultado de la expresion se vuelve a agregar a los stacks
     dimension = obtenDim(res_dim[0], res_dim[1])
     result, size = asignarMemoria('Temporal', res_type, dimension)
     TypeStack.append(res_type)
     OperDimStack.append(res_dim)
     OpStack.append(result)
+    # Genera el cuadruplo y agregalo
     quad = [oper, left_op, '_', result]
     Quad.append(quad)    
     
-
+# Esta funcion genera una dicionaria de dimension con el formato que se necesita para usarlo como atributo de una variable
+# Paramentros: x : int, y : int
+# Returns: dict : {inf : int, sup : int, nxt : dict}
+# Usage: Esta funcion se usa mas que nada cuando se necesitan hacer operaciones a expresiones que no se hacen por medio de la funcion de cuadriplosOperaciones()
 def obtenDim(x, y) : 
     dim1 = {'inf' : 0, 'sup': x, 'nxt': None}
     dim2 = {'inf' : 0, 'sup': y, 'nxt': dim1}
     return dim2
     
-
+# Esta ffuncion verifica que la operacion dada pueda ser realizada con las dimensiones y regrsa la dimension resultante
+# Parametros: op : str, dim1 : list, dim2 : list
+# Returns: list : [int : dimesnion en x, int : dimension en y]
+# Usage: Esta funcion se llama cada vez ue se requiera verificar la semantica de dimensiones cuando se general cuadruplos de operaciones
 def semanticaDimension(op, dim1, dim2):
     if(op == '+' or op == '-'):
+        # Si las dimensiones son iguales la suma se permite
         if(dim1[0] == dim2[0] and dim1[1] == dim2[1]) :
             return dim1
+        # El caso especial donde se suma un elemetno a todos los elemetnos de una matriz
         elif(dim2[0] == dim2[1] == 1) :
             return dim1
     elif(op == '*'):
+        # Para la multiplicacion de matriz se requiere que y1 == x1
         if(dim1[1] == dim2[0]) :
             return [dim1[0], dim2[1]]
+        # Para el caso especial donde se multiplica un elemento por todos los elementos de una matriz
         elif(dim2[0] == dim2[1] == 1):
             return dim1
     elif(op == '='):
+        # La asignacion solo funciona si las dimensiones son iguales
         if(dim1[0] == dim2[0] and dim1[1] == dim2[1]) :
             return dim1
     elif(op == '$'):
+        # La determinante solo acepta matrizes cuadradas
         if(dim1[0] == dim1[1]):
             return dim2
     elif(op == '?'):
+        # La inversa solo acepta marizes cuadradas
         if(dim1[0] == dim1[1]):
             return dim1
     elif(op == '¡'):
+        # La transpuesta no tiene restricciones pero las dimensiones se invierten
         return [dim1[1], dim1[0]]
+    # Default Case para cuando son variables no dimensionadas
     elif(dim1 == dim2 == [1, 1]) :
         return dim1
     return ('err')
@@ -660,7 +734,7 @@ def p_funcion_retorno(t):
         loc = TablaFunciones[t[1]]['loc']
         locTemp, size = asignarMemoria('Temporal', tipo, None)
         quad = ['dim', '1,1', '1,1', '_']
-        quad.append(quad)
+        Quad.append(quad)
         quad = ['=', locTemp, loc, '_']
         Quad.append(quad)
         OpStack.append(locTemp)
