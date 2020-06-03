@@ -1087,8 +1087,8 @@ Semantica = {
             '=': 'err'
         },
         '$': 'float',
-        '?': 'int',
-        '¡': 'float'
+        '?': 'float',
+        '¡': 'int'
     },
     #Float
     'float': {
@@ -1203,7 +1203,7 @@ Semantica = {
             '=': 'err'
         },
         '$': 'err',
-        '?': 'char',
+        '?': 'err',
         '¡': 'char'
     },
     # BOOL
