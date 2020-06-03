@@ -24,5 +24,6 @@ var int : f;
   }
 
 principal() {
+  escribe("Escribe el número que le quieres sacar el factorial);
   escribe(factorial(6));
 }

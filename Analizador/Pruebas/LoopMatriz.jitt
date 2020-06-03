@@ -4,15 +4,15 @@ var float : pi[3][3];
 
 principal() {
   # Lee los datos de la matriz
-  desde idxX = 0; hasta 2 hacer {
-    desde idxY = 0; hasta 2 hacer {
+  desde idxX = 0; hasta 3 hacer {
+    desde idxY = 0; hasta 3 hacer {
       escribe("Ingresa dato de la clumna", idxY,"y renglon", idxX );
       lee(pi[idxX][idxY]);
     }
   }
 
   # Escribe los datos de la matriz
-  desde idxX = 0; hasta 2 hacer {
+  desde idxX = 0; hasta 3 hacer {
     escribe(pi[idxX][0], pi[idxX][1], pi[idxX][2]);
   }
 
