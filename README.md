@@ -1,7 +1,7 @@
 # !Jitters
 Proyecto para la clase de Diseño de Compiladores Feb-Jun 2020
 
-					![](Images/0.png)
+					![](Images/jitters.png)
 
 ## Manual de Usuario
 
@@ -34,4 +34,4 @@ Proyecto para la clase de Diseño de Compiladores Feb-Jun 2020
 
 	![](Images/3.png)
 
-##¡Listo! Puedes jugar probando con nuestros código ejemplos en el Folder/Pruebas.
+#¡Listo! Puedes jugar probando con nuestros código ejemplos en el Folder/Pruebas.
