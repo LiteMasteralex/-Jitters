@@ -1,4 +1,5 @@
 import numpy as np
+import time
 
 Memoria = {
 	'Global': {},
@@ -128,7 +129,7 @@ def moveToMemory(loc, arr):
 	locCont = obtenContexto(loc)
 	for x in range(len(arr)) :
 		for y in range(len(arr[x])):
-			Memoria[locCont][str(int(loc) + (x * len(arr)) + y)] = arr[x][y]
+			Memoria[locCont][str(int(loc) + (x * len(arr[x])) + y)] = arr[x][y]
 
 class ExecuteError(Exception): pass
 
@@ -198,15 +199,12 @@ def asigna(left_op, right_op, res):
 	global  left_dim, right_dim
 	right_mat = recoverMatrix(right_op, right_dim[0], right_dim[1])
 	moveToMemory(left_op, right_mat)
-	
 	return None
 
 
 def escribe(left_op, right_op, res):
 	if(left_op == 'ENDLINE'):
 		print()
-	#elif(type(left_op) == str): TODO: Implementar constantes de tipo letrero que se usan para imprimir
-		#print(left_op)
 	else:
 		leftCont = obtenContexto(left_op)
 		print(Memoria[leftCont][left_op], end=" ")
@@ -385,6 +383,7 @@ import sys
 import os
 
 def main():
+	start_time = time.time()
 	global Quads, TablaFunciones, TablaConstantes, MemoriaTemp, Memoria
 	filepath = sys.argv[1]
 	if not os.path.isfile(filepath):
@@ -443,6 +442,8 @@ def main():
 	
 
 	ejecutaQuadruplos()
+	print('')
+	print("---Tiempo de ejecución: %s segundos ---" % (round((time.time() - start_time), 2)))
 
 	
 if __name__ == "__main__":
