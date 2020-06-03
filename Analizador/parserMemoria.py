@@ -660,7 +660,7 @@ def p_funcion_retorno(t):
         loc = TablaFunciones[t[1]]['loc']
         locTemp, size = asignarMemoria('Temporal', tipo, None)
         quad = ['dim', '1,1', '1,1', '_']
-        quad.append(quad)
+        Quad.append(quad)
         quad = ['=', locTemp, loc, '_']
         Quad.append(quad)
         OpStack.append(locTemp)

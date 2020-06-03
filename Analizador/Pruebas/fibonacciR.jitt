@@ -5,12 +5,8 @@ var int : n;
 funcion int fibonacciPos(int:pos);
 var int : stop;
   {
-      stop = 1;
-      si(pos < 1 | pos ~= 1 & stop != 0) entonces{
-          stop = 0; #Si intento hacer el regresar aqui
-      }
-      si (stop ~= 0) entonces{
-          regresa(pos);
+      si(pos < 1 | pos ~= 1 ) entonces{
+        regresa(pos);
       }
       regresa(fibonacciPos(pos - 1) + fibonacciPos(pos - 2));
   }
