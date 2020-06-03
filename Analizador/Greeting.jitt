@@ -1,0 +1,8 @@
+Programa MyProgram;
+var char : init;
+
+principal (){
+    escribe("Igresa la inicial de tu nombre");
+    lee(init);
+    escribe("Hola", init, "mucho gusto!");
+}
